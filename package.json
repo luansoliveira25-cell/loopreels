@@ -19,4 +19,12 @@
     "url": "https://github.com/luansoliveira25-cell/loopreels/issues"
   },
   "homepage": "https://github.com/luansoliveira25-cell/loopreels#readme"
+json{
+  "name": "loopreels",
+  "version": "1.0.0",
+  "main": "servidor.js",
+  "scripts": {
+    "start": "node servidor.js"
+  }
+}
 }

@@ -5,7 +5,7 @@ const url = require('url');
 
 const CLIENT_ID = '2142651353189924';
 const CLIENT_SECRET = '385fa924a4c683768200560b60f94d5d';
-const REDIRECT_URI = 'https://chihuahua-pretended-atrocious.ngrok-free.dev/auth/callback';
+const REDIRECT_URI = 'https://loopreels-production.up.railway.app/auth/callback';
 
 const server = http.createServer(async (req, res) => {
   res.setHeader('ngrok-skip-browser-warning', 'true');
