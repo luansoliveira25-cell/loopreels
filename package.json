@@ -1,0 +1,21 @@
+{
+  "name": "instagram-token",
+  "version": "1.0.0",
+  "description": "",
+  "main": "gerar_token.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/luansoliveira25-cell/loopreels.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/luansoliveira25-cell/loopreels/issues"
+  },
+  "homepage": "https://github.com/luansoliveira25-cell/loopreels#readme"
+}
