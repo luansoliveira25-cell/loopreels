@@ -75,8 +75,9 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(3000, () => {
-  console.log('Servidor rodando em http://localhost:3000');
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`Servidor rodando na porta ${PORT}`);
   console.log('\nCole essa URL no navegador:');
   console.log('https://www.instagram.com/oauth/authorize?force_reauth=true&client_id=' + CLIENT_ID + '&redirect_uri=' + encodeURIComponent(REDIRECT_URI) + '&response_type=code&scope=instagram_business_basic%2Cinstagram_business_content_publish\n');
 });

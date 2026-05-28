@@ -2,8 +2,9 @@
   "name": "instagram-token",
   "version": "1.0.0",
   "description": "",
-  "main": "gerar_token.js",
+  "main": "servidor.js",
   "scripts": {
+    "start": "node servidor.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
