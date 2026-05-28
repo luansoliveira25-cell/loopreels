@@ -57,14 +57,13 @@ const server = http.createServer(async (req, res) => {
           res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' });
           res.end('<h2>Erro</h2><pre>' + JSON.stringify(json, null, 2) + '</pre>');
         }
-        server.close();
+        
       });
     });
 
     apiReq.on('error', (e) => {
       console.error('Erro de conexao:', e.message);
       res.end('Erro de conexao.');
-      server.close();
     });
 
     apiReq.write(postData);
