@@ -832,11 +832,6 @@ async function agendarPost() {
   setTimeout(()=>navigate('fila'), 1500);
 }
 
-  if(btn) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-calendar-check"></i>Agendar posts'; }
-  showToast(`${total} post(s) agendado(s) com sucesso!`);
-  setTimeout(()=>navigate('fila'),1500);
-}
-
 function saveDraft() { showToast('Rascunho salvo!'); }
 
 // ===== FILA =====
