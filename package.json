@@ -1,12 +1,11 @@
 {
   "name": "loopreels",
   "version": "1.0.0",
-  "main": "servidor.js",
+  "main": "backend.js",
   "scripts": {
-    "start": "node servidor.js"
+    "start": "node backend.js"
   },
   "dependencies": {
-    "cloudinary": "^2.10.0",
-    "multer": "^2.1.1"
+    "cloudinary": "^1.41.0"
   }
 }
