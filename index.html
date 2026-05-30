@@ -863,9 +863,9 @@ function renderFila() {
       ${sorted.length===0?`
         <div class="empty"><div class="empty-icon">📭</div><div class="empty-title">Nenhum post encontrado</div><div class="empty-sub">Tente outro filtro ou crie um novo post</div></div>
       `:sorted.map(p=>`
-        <div class="queue-item" id="post-item-${p.id}">
-          <div onclick="togglePostSelect('${p.id}')" style="cursor:pointer;flex-shrink:0">
-            <div id="post-check-${p.id}" style="width:20px;height:20px;border-radius:6px;border:1.5px solid var(--border2);background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:11px;transition:.15s"></div>
+        <div class="queue-item" id="post-item-${p._id}">
+          <div onclick="togglePostSelect('${p._id}')" style="cursor:pointer;flex-shrink:0">
+            <div id="post-check-${p._id}" style="width:20px;height:20px;border-radius:6px;border:1.5px solid var(--border2);background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:11px;transition:.15s"></div>
           </div>
           <div class="queue-thumb">${p.thumbnailUrl?`<img src="${p.thumbnailUrl}" onerror="this.parentElement.textContent='🎬'">`:(p.type==='REEL'?'🎬':'🖼️')}</div>
           <div class="queue-info">
@@ -876,7 +876,7 @@ function renderFila() {
             ${p.status==='publicado'?'✅ publicado':p.status==='erro'?'❌ erro':'⏳ agendado'}
           </span>
           <div class="queue-time"><div class="queue-time-main">${p.scheduledTime?.slice(11,16)||'--:--'}</div><div class="queue-time-sub">${p.scheduledTime?.slice(0,10)||'-'}</div></div>
-          <button class="btn btn-danger btn-sm" onclick="deletePost(${p.id})" style="margin-left:8px"><i class="ti ti-trash"></i></button>
+          <button class="btn btn-danger btn-sm" onclick="deletePost('${p._id}')" style="margin-left:8px"><i class="ti ti-trash"></i></button>
         </div>`).join('')}
     </div>`;
 }
@@ -903,9 +903,9 @@ function togglePostSelect(id) {
 
 function toggleSelectAll() {
   const filtered = allPosts.filter(p => filaFilter==='todos' || p.status===filaFilter);
-  const allSelected = filtered.every(p => selectedPosts.has(String(p.id)));
+  const allSelected = filtered.every(p => selectedPosts.has(String(p._id)));
   filtered.forEach(p => {
-    const id = String(p.id);
+    const id = String(p._id);
     const check = document.getElementById('post-check-'+id);
     if(allSelected) {
       selectedPosts.delete(id);
