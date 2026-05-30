@@ -2,33 +2,91 @@ const http = require('http');
 const https = require('https');
 const fs = require('fs');
 const url = require('url');
+const { MongoClient, ObjectId } = require('mongodb');
 
 const CONFIG = {
-  TOKEN: 'SPILXRVTKZLEMWFDQNYUMJMKILYZDIOYMTOLGSIORGEGHGVQPEJMZGOOBLEMBLLO',
-  USER_ID: '4817988',
-  CLOUDINARY_CLOUD_NAME: 'dnnvm0o14',
-  CLOUDINARY_API_KEY: '982181729335523',
-  CLOUDINARY_API_SECRET: 'bhuI3u6wEJ_IO69IWX2PtnVupcU',
-  PORT: process.env.PORT || 3000,
-  DB_FILE: './loopreels-db.json'
+  TOKEN: process.env.TOKEN,
+  USER_ID: process.env.USER_ID,
+  CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME,
+  CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY,
+  CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
+  MONGODB_URI: process.env.MONGODB_URI,
+  PORT: process.env.PORT || 3000
 };
 
-function loadDB() {
-  if (!fs.existsSync(CONFIG.DB_FILE)) {
-    fs.writeFileSync(CONFIG.DB_FILE, JSON.stringify({
-      posts: [],
-      loop: { active: false, videos: [], currentIndex: 0, accountIds: [], timesPerDay: ['09:00','13:00','19:00'] },
-      settings: { delayBetweenAccounts: 5, timezone: 'America/Sao_Paulo' }
-    }, null, 2));
+// ============================================================
+// MONGODB
+// ============================================================
+let db = null;
+
+async function connectDB() {
+  const client = new MongoClient(CONFIG.MONGODB_URI);
+  await client.connect();
+  db = client.db('loopreels');
+  console.log('✅ MongoDB conectado!');
+
+  // Garantir índices
+  await db.collection('posts').createIndex({ scheduledTime: 1 });
+  await db.collection('posts').createIndex({ status: 1 });
+}
+
+async function getPosts() {
+  return await db.collection('posts').find({}).sort({ scheduledTime: 1 }).toArray();
+}
+
+async function createPost(post) {
+  const result = await db.collection('posts').insertOne({
+    ...post,
+    createdAt: new Date().toISOString()
+  });
+  return { ...post, _id: result.insertedId };
+}
+
+async function updatePost(id, update) {
+  await db.collection('posts').updateOne({ _id: new ObjectId(id) }, { $set: update });
+}
+
+async function deletePostById(id) {
+  await db.collection('posts').deleteOne({ _id: new ObjectId(id) });
+}
+
+async function deletePostsByStatus(status) {
+  if (status === 'todos') {
+    await db.collection('posts').deleteMany({});
+  } else {
+    await db.collection('posts').deleteMany({ status });
   }
-  return JSON.parse(fs.readFileSync(CONFIG.DB_FILE, 'utf8'));
 }
 
-function saveDB(data) {
-  fs.writeFileSync(CONFIG.DB_FILE, JSON.stringify(data, null, 2));
+async function getLoop() {
+  const loop = await db.collection('settings').findOne({ key: 'loop' });
+  return loop?.value || { active: false, videos: [], currentIndex: 0, accountIds: [], timesPerDay: ['09:00','13:00','19:00'] };
 }
 
-// Upload para Cloudinary
+async function saveLoop(loop) {
+  await db.collection('settings').updateOne(
+    { key: 'loop' },
+    { $set: { key: 'loop', value: loop } },
+    { upsert: true }
+  );
+}
+
+async function getSettings() {
+  const s = await db.collection('settings').findOne({ key: 'settings' });
+  return s?.value || { delayBetweenAccounts: 5, timezone: 'America/Sao_Paulo' };
+}
+
+async function saveSettings(settings) {
+  await db.collection('settings').updateOne(
+    { key: 'settings' },
+    { $set: { key: 'settings', value: settings } },
+    { upsert: true }
+  );
+}
+
+// ============================================================
+// CLOUDINARY
+// ============================================================
 function uploadToCloudinary(fileBuffer, fileName, resourceType = 'video') {
   return new Promise((resolve, reject) => {
     const cloudinary = require('cloudinary').v2;
@@ -41,11 +99,10 @@ function uploadToCloudinary(fileBuffer, fileName, resourceType = 'video') {
       api_secret: CONFIG.CLOUDINARY_API_SECRET
     });
 
-    // Salva no disco temporariamente
     const safeName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 80);
     const tmpPath = path.join(os.tmpdir(), `${Date.now()}_${safeName}`);
     fs.writeFileSync(tmpPath, fileBuffer);
-    console.log(`💾 Arquivo salvo temporariamente: ${tmpPath}`);
+    console.log(`💾 Arquivo salvo: ${tmpPath}`);
 
     const publicId = `loopreels/${Date.now()}_${safeName.replace(/\.[^/.]+$/, '').slice(0, 50)}`;
 
@@ -54,20 +111,16 @@ function uploadToCloudinary(fileBuffer, fileName, resourceType = 'video') {
       public_id: publicId,
       overwrite: false
     }, (error, result) => {
-      // Remove arquivo temporário
       try { fs.unlinkSync(tmpPath); } catch(e) {}
-      if (error) {
-        console.log('❌ Erro Cloudinary:', error.message);
-        reject(error);
-      } else {
-        console.log('✅ Upload Cloudinary OK:', result.secure_url.slice(0, 60));
-        resolve(result);
-      }
+      if (error) { console.log('❌ Erro Cloudinary:', error.message); reject(error); }
+      else { console.log('✅ Upload OK:', result.secure_url.slice(0, 60)); resolve(result); }
     });
   });
 }
 
-// Parse multipart
+// ============================================================
+// MULTIPART PARSER
+// ============================================================
 function parseMultipart(req) {
   return new Promise((resolve, reject) => {
     const chunks = [];
@@ -96,7 +149,9 @@ function parseMultipart(req) {
   });
 }
 
-// Chamada Metricool
+// ============================================================
+// METRICOOL API
+// ============================================================
 function metricoolRequest(method, endpoint, body = null) {
   return new Promise((resolve, reject) => {
     const postData = body ? JSON.stringify(body) : null;
@@ -124,104 +179,93 @@ function metricoolRequest(method, endpoint, body = null) {
   });
 }
 
-// Normalizar URL no Metricool (obrigatório antes de postar)
 async function normalizeMedia(mediaUrl, blogId) {
-  console.log(`🔄 Normalizando URL no Metricool: ${mediaUrl.slice(0, 60)}...`);
+  console.log(`🔄 Normalizando: ${mediaUrl.slice(0, 60)}...`);
   const res = await metricoolRequest('GET', `/actions/normalize/image/url?url=${encodeURIComponent(mediaUrl)}&userId=${CONFIG.USER_ID}&blogId=${blogId}`);
-  console.log('Resposta normalize:', JSON.stringify(res.data).slice(0, 200));
-  // Resposta pode ser string direta ou objeto {url: ...}
   if (typeof res.data === 'string' && res.data.startsWith('http')) return res.data;
   if (res.data && res.data.url) return res.data.url;
-  throw new Error('Falha ao normalizar mídia: ' + JSON.stringify(res.data));
+  throw new Error('Falha ao normalizar: ' + JSON.stringify(res.data));
 }
 
-// Agendar post no Metricool
 async function schedulePost(blogId, mediaUrl, caption, scheduledTime, type = 'REEL', thumbnailUrl = null) {
-  // PASSO 1: Normalizar a mídia no servidor do Metricool
   const normalizedMediaUrl = await normalizeMedia(mediaUrl, blogId);
-
-  // PASSO 2: Normalizar thumbnail se existir
   let normalizedThumbUrl = null;
   if (thumbnailUrl) {
-    try {
-      normalizedThumbUrl = await normalizeMedia(thumbnailUrl, blogId);
-    } catch(e) {
-      console.log('Aviso: falha ao normalizar thumbnail, continuando sem ela');
-    }
+    try { normalizedThumbUrl = await normalizeMedia(thumbnailUrl, blogId); }
+    catch(e) { console.log('Aviso: falha ao normalizar thumbnail'); }
   }
 
-  // PASSO 3: Criar post com URL normalizada
   const body = {
-    shortener: false,
-    draft: false,
-    text: caption,
-    firstCommentText: '',
-    autoPublish: true,
-    saveExternalMediaFiles: false,
-    media: [normalizedMediaUrl],
-    mediaAltText: [null],
+    shortener: false, draft: false, text: caption, firstCommentText: '',
+    autoPublish: true, saveExternalMediaFiles: false,
+    media: [normalizedMediaUrl], mediaAltText: [null],
     providers: [{ network: 'instagram' }],
     publicationDate: { dateTime: scheduledTime, timezone: 'America/Sao_Paulo' },
-    hasNotReadNotes: false,
-    performanceDashboardIds: [],
-    descendants: [],
+    hasNotReadNotes: false, performanceDashboardIds: [], descendants: [],
     smartLinkData: { ids: [] },
     instagramData: { type, showReelOnFeed: true, collaborators: [], shareTrialAutomatically: false }
   };
 
   if (normalizedThumbUrl) body.videoThumbnailUrl = normalizedThumbUrl;
 
-  console.log(`📤 Enviando para Metricool — conta ${blogId} — horário ${scheduledTime}`);
+  console.log(`📤 Enviando para Metricool — conta ${blogId} — ${scheduledTime}`);
   const res = await metricoolRequest('POST', `/v2/scheduler/posts?userId=${CONFIG.USER_ID}&blogId=${blogId}`, body);
-  console.log('Resposta Metricool:', JSON.stringify(res.data).slice(0, 300));
+  console.log('Resposta:', JSON.stringify(res.data).slice(0, 200));
   return res;
 }
 
-// Agendador automático
+// ============================================================
+// AGENDADOR
+// ============================================================
 function startScheduler() {
-  console.log('⏰ Agendador iniciado — verificando a cada minuto');
+  console.log('⏰ Agendador iniciado');
   setInterval(async () => {
-    const db = loadDB();
-    const now = new Date();
-    const nowStr = now.toISOString().slice(0, 16);
-    for (let post of db.posts) {
-      if (post.status === 'agendado' && post.scheduledTime <= nowStr) {
-        console.log(`\n🕐 Horário chegou! Postando na conta ${post.blogId}...`);
-        try {
-          await schedulePost(post.blogId, post.mediaUrl, post.caption, post.scheduledTime, post.type, post.thumbnailUrl);
-          post.status = 'publicado';
-          post.publishedAt = now.toISOString();
-          console.log(`✅ Publicado com sucesso!`);
-        } catch(e) {
-          post.status = 'erro';
-          post.error = e.message;
-          console.log(`❌ Erro ao publicar:`, e.message);
+    try {
+      const posts = await getPosts();
+      const now = new Date();
+      const nowStr = now.toISOString().slice(0, 16);
+
+      for (let post of posts) {
+        if (post.status === 'agendado' && post.scheduledTime <= nowStr) {
+          console.log(`\n🕐 Postando na conta ${post.blogId}...`);
+          try {
+            await schedulePost(post.blogId, post.mediaUrl, post.caption, post.scheduledTime, post.type, post.thumbnailUrl);
+            await updatePost(post._id.toString(), { status: 'publicado', publishedAt: now.toISOString() });
+            console.log(`✅ Publicado!`);
+          } catch(e) {
+            await updatePost(post._id.toString(), { status: 'erro', error: e.message });
+            console.log(`❌ Erro:`, e.message);
+          }
         }
-        saveDB(db);
       }
-    }
-    // Loop automático
-    if (db.loop.active && db.loop.videos.length > 0) {
-      const currentHour = now.toTimeString().slice(0, 5);
-      if (db.loop.timesPerDay.includes(currentHour) && now.getSeconds() < 60) {
-        const video = db.loop.videos[db.loop.currentIndex % db.loop.videos.length];
-        for (let i = 0; i < db.loop.accountIds.length; i++) {
-          const blogId = db.loop.accountIds[i];
-          setTimeout(async () => {
-            try {
-              await schedulePost(blogId, video.url, video.caption, nowStr, 'REEL', video.thumbnailUrl);
-              console.log(`🔁 Loop: vídeo ${db.loop.currentIndex + 1} postado na conta ${blogId}`);
-            } catch(e) { console.log(`❌ Loop erro conta ${blogId}:`, e.message); }
-          }, i * (db.settings.delayBetweenAccounts * 60000));
+
+      // Loop automático
+      const loop = await getLoop();
+      if (loop.active && loop.videos.length > 0) {
+        const currentHour = now.toTimeString().slice(0, 5);
+        if (loop.timesPerDay.includes(currentHour) && now.getSeconds() < 60) {
+          const video = loop.videos[loop.currentIndex % loop.videos.length];
+          const settings = await getSettings();
+          for (let i = 0; i < loop.accountIds.length; i++) {
+            const blogId = loop.accountIds[i];
+            setTimeout(async () => {
+              try {
+                await schedulePost(blogId, video.url, video.caption, nowStr, 'REEL', video.thumbnailUrl);
+                console.log(`🔁 Loop: vídeo ${loop.currentIndex + 1} na conta ${blogId}`);
+              } catch(e) { console.log(`❌ Loop erro:`, e.message); }
+            }, i * (settings.delayBetweenAccounts * 60000));
+          }
+          loop.currentIndex = (loop.currentIndex + 1) % loop.videos.length;
+          await saveLoop(loop);
         }
-        db.loop.currentIndex = (db.loop.currentIndex + 1) % db.loop.videos.length;
-        saveDB(db);
       }
-    }
+    } catch(e) { console.error('Erro no agendador:', e.message); }
   }, 60000);
 }
 
-// Helpers HTTP
+// ============================================================
+// SERVIDOR HTTP
+// ============================================================
 function sendJSON(res, status, data) {
   res.writeHead(status, {
     'Content-Type': 'application/json',
@@ -240,7 +284,6 @@ function parseBody(req) {
   });
 }
 
-// Servidor
 const server = http.createServer(async (req, res) => {
   const parsed = url.parse(req.url, true);
   const pathname = parsed.pathname;
@@ -258,10 +301,9 @@ const server = http.createServer(async (req, res) => {
     try {
       const { files } = await parseMultipart(req);
       if (!files.video) return sendJSON(res, 400, { success: false, error: 'Nenhum vídeo enviado' });
-      console.log(`☁️ Enviando para Cloudinary: ${files.video.filename}`);
       const result = await uploadToCloudinary(files.video.buffer, files.video.filename, 'video');
       const thumbnail = result.secure_url.replace('/upload/', '/upload/so_2,w_720,h_1280,c_fill/').replace(/\.(mp4|mov)$/i, '.jpg');
-      return sendJSON(res, 200, { success: true, url: result.secure_url, publicId: result.public_id, thumbnail });
+      return sendJSON(res, 200, { success: true, url: result.secure_url, thumbnail });
     } catch(e) { return sendJSON(res, 500, { success: false, error: e.message }); }
   }
 
@@ -285,74 +327,100 @@ const server = http.createServer(async (req, res) => {
 
   // Posts
   if (pathname === '/api/posts' && method === 'GET') {
-    return sendJSON(res, 200, { success: true, posts: loadDB().posts });
+    try {
+      const posts = await getPosts();
+      return sendJSON(res, 200, { success: true, posts });
+    } catch(e) { return sendJSON(res, 500, { success: false, error: e.message }); }
   }
 
   if (pathname === '/api/posts' && method === 'POST') {
-    const body = await parseBody(req);
-    const db = loadDB();
-    const { mediaUrl, thumbnailUrl, caption, scheduledTime, blogIds, type } = body;
-    const newPosts = blogIds.map(blogId => ({
-      id: Date.now() + Math.random(), blogId, mediaUrl, thumbnailUrl: thumbnailUrl || null,
-      caption, scheduledTime, type: type || 'REEL', status: 'agendado', createdAt: new Date().toISOString()
-    }));
-    db.posts.push(...newPosts);
-    saveDB(db);
-    return sendJSON(res, 201, { success: true, posts: newPosts });
+    try {
+      const body = await parseBody(req);
+      const { mediaUrl, thumbnailUrl, caption, scheduledTime, blogIds, type } = body;
+      const created = [];
+      for (const blogId of blogIds) {
+        const post = await createPost({ blogId, mediaUrl, thumbnailUrl: thumbnailUrl || null, caption, scheduledTime, type: type || 'REEL', status: 'agendado' });
+        created.push(post);
+      }
+      return sendJSON(res, 201, { success: true, posts: created });
+    } catch(e) { return sendJSON(res, 500, { success: false, error: e.message }); }
   }
 
   if (pathname.startsWith('/api/posts/') && method === 'DELETE') {
-    const id = parseFloat(pathname.split('/')[3]);
-    const db = loadDB();
-    db.posts = db.posts.filter(p => p.id !== id);
-    saveDB(db);
-    return sendJSON(res, 200, { success: true });
+    try {
+      const id = pathname.split('/')[3];
+      await deletePostById(id);
+      return sendJSON(res, 200, { success: true });
+    } catch(e) { return sendJSON(res, 500, { success: false, error: e.message }); }
+  }
+
+  // Delete por status
+  if (pathname === '/api/posts/bulk-delete' && method === 'POST') {
+    try {
+      const body = await parseBody(req);
+      await deletePostsByStatus(body.status || 'todos');
+      return sendJSON(res, 200, { success: true });
+    } catch(e) { return sendJSON(res, 500, { success: false, error: e.message }); }
   }
 
   // Loop
   if (pathname === '/api/loop' && method === 'GET') {
-    return sendJSON(res, 200, { success: true, loop: loadDB().loop });
+    try { return sendJSON(res, 200, { success: true, loop: await getLoop() }); }
+    catch(e) { return sendJSON(res, 500, { success: false, error: e.message }); }
   }
 
   if (pathname === '/api/loop' && method === 'PUT') {
-    const body = await parseBody(req);
-    const db = loadDB();
-    db.loop = { ...db.loop, ...body };
-    saveDB(db);
-    return sendJSON(res, 200, { success: true, loop: db.loop });
+    try {
+      const body = await parseBody(req);
+      const loop = await getLoop();
+      const updated = { ...loop, ...body };
+      await saveLoop(updated);
+      return sendJSON(res, 200, { success: true, loop: updated });
+    } catch(e) { return sendJSON(res, 500, { success: false, error: e.message }); }
   }
 
   // Stats
   if (pathname === '/api/stats' && method === 'GET') {
-    const db = loadDB();
-    const today = new Date().toISOString().slice(0, 10);
-    return sendJSON(res, 200, { success: true, stats: {
-      totalScheduled: db.posts.filter(p => p.status === 'agendado').length,
-      totalPublished: db.posts.filter(p => p.status === 'publicado').length,
-      totalError: db.posts.filter(p => p.status === 'erro').length,
-      loopActive: db.loop.active,
-      loopVideos: db.loop.videos.length,
-      loopIndex: db.loop.currentIndex
-    }});
+    try {
+      const posts = await getPosts();
+      const loop = await getLoop();
+      return sendJSON(res, 200, { success: true, stats: {
+        totalScheduled: posts.filter(p => p.status === 'agendado').length,
+        totalPublished: posts.filter(p => p.status === 'publicado').length,
+        totalError: posts.filter(p => p.status === 'erro').length,
+        loopActive: loop.active,
+        loopVideos: loop.videos.length,
+        loopIndex: loop.currentIndex
+      }});
+    } catch(e) { return sendJSON(res, 500, { success: false, error: e.message }); }
   }
 
   // Settings
   if (pathname === '/api/settings' && method === 'GET') {
-    return sendJSON(res, 200, { success: true, settings: loadDB().settings });
+    try { return sendJSON(res, 200, { success: true, settings: await getSettings() }); }
+    catch(e) { return sendJSON(res, 500, { success: false, error: e.message }); }
   }
 
   if (pathname === '/api/settings' && method === 'PUT') {
-    const body = await parseBody(req);
-    const db = loadDB();
-    db.settings = { ...db.settings, ...body };
-    saveDB(db);
-    return sendJSON(res, 200, { success: true, settings: db.settings });
+    try {
+      const body = await parseBody(req);
+      const settings = await getSettings();
+      const updated = { ...settings, ...body };
+      await saveSettings(updated);
+      return sendJSON(res, 200, { success: true, settings: updated });
+    } catch(e) { return sendJSON(res, 500, { success: false, error: e.message }); }
   }
 
   sendJSON(res, 404, { success: false, error: 'Rota não encontrada' });
 });
 
-server.listen(CONFIG.PORT, '0.0.0.0', () => {
-  console.log(`\n🚀 Loop Reels rodando na porta ${CONFIG.PORT}\n`);
-  startScheduler();
+// Iniciar
+connectDB().then(() => {
+  server.listen(CONFIG.PORT, '0.0.0.0', () => {
+    console.log(`\n🚀 Loop Reels rodando na porta ${CONFIG.PORT}\n`);
+    startScheduler();
+  });
+}).catch(e => {
+  console.error('❌ Erro ao conectar MongoDB:', e.message);
+  process.exit(1);
 });
