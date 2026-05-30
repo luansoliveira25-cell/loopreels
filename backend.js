@@ -4,11 +4,11 @@ const fs = require('fs');
 const url = require('url');
 
 const CONFIG = {
-  TOKEN: process.env.TOKEN,
-  USER_ID: process.env.USER_ID,
-  CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME,
-  CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY,
-  CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
+  TOKEN: 'SPILXRVTKZLEMWFDQNYUMJMKILYZDIOYMTOLGSIORGEGHGVQPEJMZGOOBLEMBLLO',
+  USER_ID: '4817988',
+  CLOUDINARY_CLOUD_NAME: 'dnnvm0o14',
+  CLOUDINARY_API_KEY: '982181729335523',
+  CLOUDINARY_API_SECRET: 'bhuI3u6wEJ_IO69IWX2PtnVupcU',
   PORT: process.env.PORT || 3000,
   DB_FILE: './loopreels-db.json'
 };
@@ -278,7 +278,7 @@ const server = http.createServer(async (req, res) => {
   // Contas
   if (pathname === '/api/accounts' && method === 'GET') {
     try {
-      const r = await metricoolRequest('GET', `/admin/simpleProfiles?userId=${CONFIG.USER_ID}&blogId=${CONFIG.USER_ID}`);
+      const r = await metricoolRequest('GET', `/admin/profiles?userId=${CONFIG.USER_ID}&blogId=${CONFIG.USER_ID}`);
       return sendJSON(res, 200, { success: true, accounts: r.data });
     } catch(e) { return sendJSON(res, 500, { success: false, error: e.message }); }
   }
