@@ -34,7 +34,11 @@ if (!MONGODB_URI) {
 let db = null;
 
 async function connectDB() {
-  const client = new MongoClient(MONGODB_URI);
+  const client = new MongoClient(MONGODB_URI, {
+    tls: true,
+    serverSelectionTimeoutMS: 10000,
+    connectTimeoutMS: 10000
+  });
   await client.connect();
   db = client.db('loopreels');
   console.log('✅ MongoDB conectado!');
