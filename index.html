@@ -16,7 +16,15 @@
   --text1:#f0ede8;--text2:#a09e9a;--text3:#6b6966;
 }
 body{background:var(--bg1);color:var(--text1);font-family:'DM Sans',sans-serif;display:flex;height:100vh;overflow:hidden}
-.sidebar{width:220px;min-width:220px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column}
+.sidebar{width:220px;min-width:220px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;transition:width .2s,min-width .2s;overflow:hidden}
+.sidebar.collapsed{width:56px;min-width:56px}
+.sidebar.collapsed .logo-text,.sidebar.collapsed .logo-sub,.sidebar.collapsed .nav-item span:not(.nav-icon),.sidebar.collapsed .nav-badge,.sidebar.collapsed .nav-section,.sidebar.collapsed .user-name,.sidebar.collapsed .user-plan{display:none}
+.sidebar.collapsed .nav-item{justify-content:center;padding:9px}
+.sidebar.collapsed .logo{justify-content:center;padding:16px 10px}
+.sidebar.collapsed .sidebar-footer{justify-content:center;padding:10px}
+.sidebar-toggle{position:absolute;top:50%;transform:translateY(-50%);right:-12px;width:24px;height:24px;background:var(--bg2);border:1px solid var(--border2);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;color:var(--text2);z-index:100;transition:.2s}
+.sidebar-toggle:hover{background:var(--bg3);color:var(--text1)}
+.sidebar-wrap{position:relative;display:flex;flex-shrink:0}
 .logo{padding:20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
 .logo-icon{width:34px;height:34px;background:var(--accent);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:17px}
 .logo-text{font-size:15px;font-weight:700;letter-spacing:-.3px}
@@ -55,7 +63,7 @@ body{background:var(--bg1);color:var(--text1);font-family:'DM Sans',sans-serif;d
 .stat-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
 .stat-value{font-size:24px;font-weight:700;letter-spacing:-.5px;line-height:1}
 .stat-meta{font-size:11px;color:var(--text3);margin-top:5px}
-.account-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.account-grid{display:grid;grid-template-columns:1fr;gap:6px}
 .account-chip{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;border:1.5px solid var(--border);cursor:pointer;transition:.15s;background:var(--bg3)}
 .account-chip:hover{border-color:var(--border2)}
 .account-chip.selected{border-color:var(--accent);background:rgba(124,92,252,.08)}
@@ -179,7 +187,8 @@ select.form-input{appearance:none}
 </head>
 <body>
 
-<div class="sidebar">
+<div class="sidebar-wrap">
+<div class="sidebar" id="sidebar">
   <div class="logo">
     <div class="logo-icon">🔁</div>
     <div>
@@ -188,18 +197,20 @@ select.form-input{appearance:none}
     </div>
   </div>
   <nav class="nav">
-    <div class="nav-item active" onclick="navigate('dashboard')"><i class="ti ti-layout-dashboard nav-icon"></i>Visão Geral</div>
-    <div class="nav-item" onclick="navigate('criar')"><i class="ti ti-circle-plus nav-icon"></i>Criar Post</div>
-    <div class="nav-item" onclick="navigate('fila')"><i class="ti ti-list nav-icon"></i>Fila de Posts<span class="nav-badge" id="nav-badge-fila">0</span></div>
-    <div class="nav-item" onclick="navigate('contas')"><i class="ti ti-brand-instagram nav-icon"></i>Contas</div>
+    <div class="nav-item active" onclick="navigate('dashboard')"><i class="ti ti-layout-dashboard nav-icon"></i><span>Visão Geral</span></div>
+    <div class="nav-item" onclick="navigate('criar')"><i class="ti ti-circle-plus nav-icon"></i><span>Criar Post</span></div>
+    <div class="nav-item" onclick="navigate('fila')"><i class="ti ti-list nav-icon"></i><span>Fila de Posts</span><span class="nav-badge" id="nav-badge-fila">0</span></div>
+    <div class="nav-item" onclick="navigate('contas')"><i class="ti ti-brand-instagram nav-icon"></i><span>Contas</span></div>
     <div class="nav-section">Automação</div>
-    <div class="nav-item" onclick="navigate('loop')"><i class="ti ti-refresh nav-icon"></i>Loop Automático<span class="nav-badge green" id="nav-loop-badge">OFF</span></div>
-    <div class="nav-item" onclick="navigate('config')"><i class="ti ti-settings nav-icon"></i>Configurações</div>
+    <div class="nav-item" onclick="navigate('loop')"><i class="ti ti-refresh nav-icon"></i><span>Loop Automático</span><span class="nav-badge green" id="nav-loop-badge">OFF</span></div>
+    <div class="nav-item" onclick="navigate('config')"><i class="ti ti-settings nav-icon"></i><span>Configurações</span></div>
   </nav>
   <div class="sidebar-footer">
     <div class="user-avatar">L</div>
     <div><div class="user-name">Loop Reels</div><div class="user-plan" id="sidebar-accounts-count">carregando...</div></div>
   </div>
+</div>
+<div class="sidebar-toggle" onclick="toggleSidebar()" id="sidebar-toggle">◀</div>
 </div>
 
 <div class="main">
@@ -224,6 +235,13 @@ let accountThumbnails = {}; // {blogId: thumbnailUrl}
 let selectedDays = new Set([1,2,3,4,5]); // Seg-Sex por padrão
 let currentType = 'reel';
 let timeSlots = ['09:00','13:00','19:00'];
+
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const toggle = document.getElementById('sidebar-toggle');
+  sidebar.classList.toggle('collapsed');
+  toggle.textContent = sidebar.classList.contains('collapsed') ? '▶' : '◀';
+}
 
 function showToast(msg, type='success') {
   const t = document.getElementById('toast');
@@ -741,42 +759,48 @@ async function agendarPost() {
     return a;
   }
 
-  // Gerar datas para os próximos 30 dias
-  const dates = [];
+  // Gerar datas+horários ordenados
+  const slots = [];
   const now = new Date();
-  for(let i = 0; i < 30; i++) {
+  for(let i = 0; i < 60; i++) {
     const d = new Date(now);
     d.setDate(now.getDate() + i);
-    if(selectedDays.has(d.getDay())) dates.push(d.toISOString().slice(0,10));
-  }
-  if(dates.length===0) return showToast('Nenhuma data encontrada nos próximos 30 dias!','error');
-
-  let total = 0;
-
-  for(const blogId of blogIds) {
-    // Cada conta tem sua própria ordem de vídeos (embaralhada ou não)
-    const videosForAccount = shuffle ? shuffleArray(readyVideos) : [...readyVideos];
-    const thumbForAccount = accountThumbnails[blogId] || selectedThumbnailUrl || null;
-
-    let videoIndex = 0;
-    for(const date of dates) {
+    if(selectedDays.has(d.getDay())) {
       for(const time of timeSlots) {
-        const video = videosForAccount[videoIndex % videosForAccount.length];
-        const scheduledTime = `${date}T${time}:00`;
-        const res = await api('POST','/api/posts',{
-          mediaUrl: video.url,
-          thumbnailUrl: thumbForAccount,
-          caption,
-          scheduledTime,
-          blogIds: [blogId],
-          type: currentType.toUpperCase()
-        });
-        if(res.success) total++;
-        videoIndex++;
+        slots.push(`${d.toISOString().slice(0,10)}T${time}:00`);
       }
     }
   }
 
+  if(slots.length===0) return showToast('Nenhuma data encontrada!','error');
+
+  let total = 0;
+  const btn = document.getElementById('btn-agendar');
+  if(btn) { btn.disabled = true; btn.textContent = 'Agendando...'; }
+
+  for(const blogId of blogIds) {
+    // Cada conta tem sua própria ordem de vídeos
+    const videosForAccount = shuffle ? shuffleArray(readyVideos) : [...readyVideos];
+    const thumbForAccount = accountThumbnails[blogId] || selectedThumbnailUrl || null;
+
+    // Cada vídeo vai para um slot diferente — 1 vídeo por slot
+    for(let i = 0; i < videosForAccount.length; i++) {
+      if(i >= slots.length) break; // não agenda além dos slots disponíveis
+      const video = videosForAccount[i];
+      const scheduledTime = slots[i];
+      const res = await api('POST','/api/posts',{
+        mediaUrl: video.url,
+        thumbnailUrl: thumbForAccount,
+        caption,
+        scheduledTime,
+        blogIds: [blogId],
+        type: currentType.toUpperCase()
+      });
+      if(res.success) total++;
+    }
+  }
+
+  if(btn) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-calendar-check"></i>Agendar posts'; }
   showToast(`${total} post(s) agendado(s) com sucesso!`);
   setTimeout(()=>navigate('fila'),1500);
 }
@@ -784,21 +808,45 @@ async function agendarPost() {
 function saveDraft() { showToast('Rascunho salvo!'); }
 
 // ===== FILA =====
+let filaFilter = 'todos';
+let selectedPosts = new Set();
+
 function renderFila() {
   document.getElementById('topbar-actions').innerHTML = `<button class="btn btn-primary" onclick="navigate('criar')"><i class="ti ti-circle-plus"></i>Novo Post</button>`;
-  const sorted = [...allPosts].sort((a,b)=>(b.scheduledTime||'').localeCompare(a.scheduledTime||''));
+  selectedPosts = new Set();
+
+  const filtered = allPosts.filter(p => {
+    if(filaFilter === 'todos') return true;
+    return p.status === filaFilter;
+  });
+  const sorted = [...filtered].sort((a,b)=>(a.scheduledTime||'').localeCompare(b.scheduledTime||''));
+
   document.getElementById('content').innerHTML = `
-    <div class="card">
-      <div class="card-header">
-        <div class="card-title"><i class="ti ti-list"></i>Todos os posts (${allPosts.length})</div>
-        <div style="display:flex;gap:6px">
-          <span class="pill pill-amber">⏳ ${stats.totalScheduled||0} agendados</span>
-          <span class="pill pill-green">✅ ${stats.totalPublished||0} publicados</span>
-          <span class="pill pill-red">❌ ${stats.totalError||0} erros</span>
+    <div class="card" style="margin-bottom:14px">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <button onclick="setFilaFilter('todos')" class="btn btn-sm ${filaFilter==='todos'?'btn-primary':'btn-ghost'}">Todos (${allPosts.length})</button>
+        <button onclick="setFilaFilter('agendado')" class="btn btn-sm ${filaFilter==='agendado'?'btn-primary':'btn-ghost'}">⏳ Agendados (${stats.totalScheduled||0})</button>
+        <button onclick="setFilaFilter('publicado')" class="btn btn-sm ${filaFilter==='publicado'?'btn-primary':'btn-ghost'}">✅ Publicados (${stats.totalPublished||0})</button>
+        <button onclick="setFilaFilter('erro')" class="btn btn-sm ${filaFilter==='erro'?'btn-primary':'btn-ghost'}">❌ Erros (${stats.totalError||0})</button>
+        <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-ghost btn-sm" onclick="toggleSelectAll()"><i class="ti ti-checkbox"></i> Selecionar todos</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteSelected()" id="btn-delete-selected" style="display:none"><i class="ti ti-trash"></i> Apagar selecionados (<span id="selected-count">0</span>)</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteByFilter('agendado')"><i class="ti ti-trash"></i> Apagar agendados</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteByFilter('publicado')"><i class="ti ti-trash"></i> Apagar publicados</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteByFilter('erro')"><i class="ti ti-trash"></i> Apagar erros</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteByFilter('todos')" style="background:rgba(239,68,68,.25)"><i class="ti ti-trash"></i> Apagar tudo</button>
         </div>
       </div>
-      ${sorted.length===0?'<div class="empty"><div class="empty-icon">📭</div><div class="empty-title">Nenhum post ainda</div><div class="empty-sub">Crie seu primeiro post!</div></div>':sorted.map(p=>`
-        <div class="queue-item">
+    </div>
+
+    <div class="card">
+      ${sorted.length===0?`
+        <div class="empty"><div class="empty-icon">📭</div><div class="empty-title">Nenhum post encontrado</div><div class="empty-sub">Tente outro filtro ou crie um novo post</div></div>
+      `:sorted.map(p=>`
+        <div class="queue-item" id="post-item-${p.id}">
+          <div onclick="togglePostSelect('${p.id}')" style="cursor:pointer;flex-shrink:0">
+            <div id="post-check-${p.id}" style="width:20px;height:20px;border-radius:6px;border:1.5px solid var(--border2);background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:11px;transition:.15s"></div>
+          </div>
           <div class="queue-thumb">${p.thumbnailUrl?`<img src="${p.thumbnailUrl}" onerror="this.parentElement.textContent='🎬'">`:(p.type==='REEL'?'🎬':'🖼️')}</div>
           <div class="queue-info">
             <div class="queue-title">${p.caption?.slice(0,50)||'Sem legenda'}${(p.caption?.length||0)>50?'...':''}</div>
@@ -813,10 +861,79 @@ function renderFila() {
     </div>`;
 }
 
+function setFilaFilter(filter) {
+  filaFilter = filter;
+  renderFila();
+}
+
+function togglePostSelect(id) {
+  const check = document.getElementById('post-check-'+id);
+  if(selectedPosts.has(id)) {
+    selectedPosts.delete(id);
+    if(check) { check.style.background='var(--bg3)'; check.style.borderColor='var(--border2)'; check.textContent=''; }
+  } else {
+    selectedPosts.add(id);
+    if(check) { check.style.background='var(--accent)'; check.style.borderColor='var(--accent)'; check.textContent='✓'; check.style.color='#fff'; }
+  }
+  const btn = document.getElementById('btn-delete-selected');
+  const count = document.getElementById('selected-count');
+  if(btn) btn.style.display = selectedPosts.size > 0 ? 'inline-flex' : 'none';
+  if(count) count.textContent = selectedPosts.size;
+}
+
+function toggleSelectAll() {
+  const filtered = allPosts.filter(p => filaFilter==='todos' || p.status===filaFilter);
+  const allSelected = filtered.every(p => selectedPosts.has(String(p.id)));
+  filtered.forEach(p => {
+    const id = String(p.id);
+    const check = document.getElementById('post-check-'+id);
+    if(allSelected) {
+      selectedPosts.delete(id);
+      if(check) { check.style.background='var(--bg3)'; check.style.borderColor='var(--border2)'; check.textContent=''; }
+    } else {
+      selectedPosts.add(id);
+      if(check) { check.style.background='var(--accent)'; check.style.borderColor='var(--accent)'; check.textContent='✓'; check.style.color='#fff'; }
+    }
+  });
+  const btn = document.getElementById('btn-delete-selected');
+  const count = document.getElementById('selected-count');
+  if(btn) btn.style.display = selectedPosts.size > 0 ? 'inline-flex' : 'none';
+  if(count) count.textContent = selectedPosts.size;
+}
+
+async function deleteSelected() {
+  if(selectedPosts.size === 0) return;
+  if(!confirm(`Apagar ${selectedPosts.size} post(s) selecionado(s)?`)) return;
+  let deleted = 0;
+  for(const id of selectedPosts) {
+    const res = await api('DELETE', `/api/posts/${id}`);
+    if(res.success) deleted++;
+  }
+  showToast(`${deleted} post(s) apagado(s)!`);
+  selectedPosts = new Set();
+  await loadData();
+  renderFila();
+}
+
+async function deleteByFilter(filter) {
+  const toDelete = filter==='todos' ? allPosts : allPosts.filter(p => p.status===filter);
+  if(toDelete.length === 0) return showToast('Nenhum post para apagar!', 'error');
+  const label = filter==='todos'?'TODOS os posts':filter==='agendado'?'posts agendados':filter==='publicado'?'posts publicados':'posts com erro';
+  if(!confirm(`Apagar ${toDelete.length} ${label}? Esta ação não pode ser desfeita!`)) return;
+  let deleted = 0;
+  for(const p of toDelete) {
+    const res = await api('DELETE', `/api/posts/${p.id}`);
+    if(res.success) deleted++;
+  }
+  showToast(`${deleted} post(s) apagado(s)!`);
+  await loadData();
+  renderFila();
+}
+
 async function deletePost(id) {
   if(!confirm('Excluir este post?')) return;
   const res = await api('DELETE',`/api/posts/${id}`);
-  if(res.success){showToast('Post excluído!');navigate('fila');}
+  if(res.success){showToast('Post excluído!'); await loadData(); renderFila();}
   else showToast('Erro ao excluir!','error');
 }
 
