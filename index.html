@@ -736,13 +736,22 @@ function updateSummary() {
   const readyVideos = uploadedVideos.filter(v=>v.status==='done').length;
   const nAccounts = selectedAccounts.size;
   const nTimes = timeSlots.length;
-  const nDays = selectedDays.size;
+
+  // Contar quantos dias selecionados existem nos próximos 7 dias
+  const now = new Date();
+  let nDays = 0;
+  for(let i = 0; i < 7; i++) {
+    const d = new Date(now);
+    d.setDate(now.getDate() + i);
+    if(selectedDays.has(d.getDay())) nDays++;
+  }
+
   const total = readyVideos * nAccounts * nTimes * nDays;
   const label = currentType==='reel'?'vídeo(s)':'imagem(s)';
   const el = id => document.getElementById(id);
   if(el('sum-media')) el('sum-media').textContent = `${readyVideos} ${label}`;
   if(el('sum-accounts')) el('sum-accounts').textContent = `${nAccounts} conta(s)`;
-  if(el('sum-times')) el('sum-times').textContent = `${nTimes} horário(s) · ${nDays} dia(s)/sem`;
+  if(el('sum-times')) el('sum-times').textContent = `${nTimes} horário(s) · ${nDays} dia(s) próx. 7 dias`;
   if(el('sum-total')) el('sum-total').textContent = total;
   if(el('btn-total')) el('btn-total').textContent = total;
   if(el('accounts-selected-label')) el('accounts-selected-label').textContent = `${nAccounts} de ${allAccounts.filter(a=>a.instagram).length} selecionadas`;
@@ -753,11 +762,12 @@ async function agendarPost() {
   const caption = document.getElementById('legenda')?.value||'';
   const blogIds = [...selectedAccounts];
   const shuffle = document.getElementById('shuffle-toggle')?.checked || false;
+  const intervalMinutes = parseInt(document.getElementById('interval-minutes')?.value || 1);
+
   if(readyVideos.length===0) return showToast('Aguarde o upload dos vídeos!','error');
   if(blogIds.length===0) return showToast('Selecione pelo menos 1 conta!','error');
   if(selectedDays.size===0) return showToast('Selecione pelo menos 1 dia!','error');
 
-  // Função para embaralhar array (Fisher-Yates)
   function shuffleArray(arr) {
     const a = [...arr];
     for(let i = a.length-1; i > 0; i--) {
@@ -767,58 +777,60 @@ async function agendarPost() {
     return a;
   }
 
-  // Gerar datas+horários ordenados
-  const slots = [];
+  // Gerar apenas as datas selecionadas nos próximos 7 dias
+  const dates = [];
   const now = new Date();
-  for(let i = 0; i < 60; i++) {
+  for(let i = 0; i < 7; i++) {
     const d = new Date(now);
     d.setDate(now.getDate() + i);
     if(selectedDays.has(d.getDay())) {
-      for(const time of timeSlots) {
-        slots.push(`${d.toISOString().slice(0,10)}T${time}:00`);
-      }
+      dates.push(d.toISOString().slice(0,10));
     }
   }
 
-  if(slots.length===0) return showToast('Nenhuma data encontrada!','error');
+  if(dates.length===0) return showToast('Nenhuma data encontrada nos próximos 7 dias!','error');
+
+  // Confirmar total de posts
+  const totalExpected = blogIds.length * dates.length * timeSlots.length * readyVideos.length;
+  if(!confirm(`Agendar ${totalExpected} posts?\n\n${readyVideos.length} vídeos × ${blogIds.length} contas × ${timeSlots.length} horários × ${dates.length} dia(s)`)) return;
 
   let total = 0;
   const btn = document.getElementById('btn-agendar');
   if(btn) { btn.disabled = true; btn.textContent = 'Agendando...'; }
 
-  // Intervalo entre vídeos em minutos (configurável pelo usuário)
-  const intervalMinutes = parseInt(document.getElementById('interval-minutes')?.value || 1);
-
   for(const blogId of blogIds) {
     const videosForAccount = shuffle ? shuffleArray(readyVideos) : [...readyVideos];
     const thumbForAccount = accountThumbnails[blogId] || selectedThumbnailUrl || null;
 
-    // Para cada slot (data+horário), posta todos os vídeos com intervalo de minutos
-    for(const slot of slots) {
-      const [datePart, timePart] = slot.split('T');
-      const [hour, minute] = timePart.split(':').map(Number);
+    for(const date of dates) {
+      for(const time of timeSlots) {
+        const [hour, minute] = time.split(':').map(Number);
 
-      for(let i = 0; i < videosForAccount.length; i++) {
-        const video = videosForAccount[i];
+        for(let i = 0; i < videosForAccount.length; i++) {
+          const video = videosForAccount[i];
+          const totalMins = hour * 60 + minute + (i * intervalMinutes);
+          const newHour = Math.floor(totalMins / 60) % 24;
+          const newMin = totalMins % 60;
+          const scheduledTime = `${date}T${String(newHour).padStart(2,'0')}:${String(newMin).padStart(2,'0')}:00`;
 
-        // Calcular horário com intervalo
-        const totalMinutes = hour * 60 + minute + (i * intervalMinutes);
-        const newHour = Math.floor(totalMinutes / 60) % 24;
-        const newMinute = totalMinutes % 60;
-        const scheduledTime = `${datePart}T${String(newHour).padStart(2,'0')}:${String(newMinute).padStart(2,'0')}:00`;
-
-        const res = await api('POST','/api/posts',{
-          mediaUrl: video.url,
-          thumbnailUrl: thumbForAccount,
-          caption,
-          scheduledTime,
-          blogIds: [blogId],
-          type: currentType.toUpperCase()
-        });
-        if(res.success) total++;
+          const res = await api('POST','/api/posts',{
+            mediaUrl: video.url,
+            thumbnailUrl: thumbForAccount,
+            caption,
+            scheduledTime,
+            blogIds: [blogId],
+            type: currentType.toUpperCase()
+          });
+          if(res.success) total++;
+        }
       }
     }
   }
+
+  if(btn) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-calendar-check"></i>Agendar posts'; }
+  showToast(`${total} post(s) agendado(s) com sucesso!`);
+  setTimeout(()=>navigate('fila'), 1500);
+}
 
   if(btn) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-calendar-check"></i>Agendar posts'; }
   showToast(`${total} post(s) agendado(s) com sucesso!`);
@@ -942,10 +954,12 @@ async function deleteByFilter(filter) {
   if(!confirm(`Apagar ${toDelete.length} ${label}? Esta ação não pode ser desfeita!`)) return;
   let deleted = 0;
   for(const p of toDelete) {
-    const res = await api('DELETE', `/api/posts/${p.id}`);
+    const id = p._id || p.id;
+    const res = await api('DELETE', `/api/posts/${id}`);
     if(res.success) deleted++;
   }
   showToast(`${deleted} post(s) apagado(s)!`);
+  selectedPosts = new Set();
   await loadData();
   renderFila();
 }
