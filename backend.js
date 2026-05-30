@@ -5,14 +5,23 @@ const url = require('url');
 const { MongoClient, ObjectId } = require('mongodb');
 
 const CONFIG = {
-  TOKEN: process.env.TOKEN,
-  USER_ID: process.env.USER_ID,
-  CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME,
-  CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY,
-  CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
-  MONGODB_URI: process.env.MONGODB_URI,
+  TOKEN: process.env.TOKEN || '',
+  USER_ID: process.env.USER_ID || '',
+  CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME || '',
+  CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY || '',
+  CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET || '',
+  MONGODB_URI: process.env.MONGODB_URI || '',
   PORT: process.env.PORT || 3000
 };
+
+console.log('🔍 Verificando variáveis de ambiente...');
+console.log('MONGODB_URI definida:', !!CONFIG.MONGODB_URI);
+console.log('TOKEN definido:', !!CONFIG.TOKEN);
+
+if (!CONFIG.MONGODB_URI) {
+  console.error('❌ MONGODB_URI não está definida nas variáveis de ambiente!');
+  process.exit(1);
+}
 
 // ============================================================
 // MONGODB
