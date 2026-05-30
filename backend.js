@@ -52,6 +52,28 @@ async function getPosts() {
   return await db.collection('posts').find({}).sort({ scheduledTime: 1 }).toArray();
 }
 
+async function getScheduledPostsDue(nowStr) {
+  // Busca posts agendados cujo horário já passou
+  // Compara apenas até os minutos (YYYY-MM-DDTHH:MM) para evitar problemas com segundos
+  const posts = await db.collection('posts').find({
+    status: 'agendado'
+  }).toArray();
+  
+  // Filtra comparando só até os minutos
+  return posts.filter(p => {
+    const postTime = (p.scheduledTime || '').slice(0, 16);
+    return postTime <= nowStr;
+  });
+}
+
+async function markAsProcessing(id) {
+  const result = await db.collection('posts').updateOne(
+    { _id: new ObjectId(id), status: 'agendado' },
+    { $set: { status: 'processando' } }
+  );
+  return result.modifiedCount > 0;
+}
+
 async function createPost(post) {
   const result = await db.collection('posts').insertOne({
     ...post,
@@ -239,27 +261,29 @@ function startScheduler() {
   console.log('⏰ Agendador iniciado');
   setInterval(async () => {
     try {
-      const posts = await getPosts();
       const now = new Date();
-
       // Converter para horário de Brasília (UTC-3)
-      const brasiliaOffset = -3 * 60; // minutos
+      const brasiliaOffset = -3 * 60;
       const brasiliaTime = new Date(now.getTime() + brasiliaOffset * 60000);
       const nowStr = brasiliaTime.toISOString().slice(0, 16);
-
       console.log(`⏰ Verificando às ${nowStr} BRT`);
 
+      const posts = await getScheduledPostsDue(nowStr);
+      console.log(`📋 ${posts.length} post(s) para processar`);
+
       for (let post of posts) {
-        if (post.status === 'agendado' && post.scheduledTime <= nowStr) {
-          console.log(`\n🕐 Postando na conta ${post.blogId}...`);
-          try {
-            await schedulePost(post.blogId, post.mediaUrl, post.caption, post.scheduledTime, post.type, post.thumbnailUrl);
-            await updatePost(post._id.toString(), { status: 'publicado', publishedAt: now.toISOString() });
-            console.log(`✅ Publicado!`);
-          } catch(e) {
-            await updatePost(post._id.toString(), { status: 'erro', error: e.message });
-            console.log(`❌ Erro:`, e.message);
-          }
+        // Marca como processando atomicamente — só processa se ainda estiver 'agendado'
+        const canProcess = await markAsProcessing(post._id.toString());
+        if (!canProcess) continue; // outro processo já pegou esse post
+
+        console.log(`\n🕐 Postando @${post.blogId} — ${post.scheduledTime}`);
+        try {
+          await schedulePost(post.blogId, post.mediaUrl, post.caption, post.scheduledTime, post.type, post.thumbnailUrl);
+          await updatePost(post._id.toString(), { status: 'publicado', publishedAt: now.toISOString() });
+          console.log(`✅ Publicado!`);
+        } catch(e) {
+          await updatePost(post._id.toString(), { status: 'erro', error: e.message });
+          console.log(`❌ Erro:`, e.message);
         }
       }
 
