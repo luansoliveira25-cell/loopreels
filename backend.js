@@ -10,16 +10,21 @@ const CONFIG = {
   CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME || '',
   CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY || '',
   CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET || '',
-  MONGODB_URI: process.env.MONGODB_URI || '',
   PORT: process.env.PORT || 3000
 };
 
+// Montar URI do MongoDB a partir de variáveis separadas ou URI completa
+const MONGODB_URI = process.env.MONGODB_URI ||
+  (process.env.MONGO_USER && process.env.MONGO_PASS && process.env.MONGO_HOST
+    ? `mongodb+srv://${process.env.MONGO_USER}:${process.env.MONGO_PASS}@${process.env.MONGO_HOST}/?retryWrites=true&w=majority`
+    : '');
+
 console.log('🔍 Verificando variáveis de ambiente...');
-console.log('MONGODB_URI definida:', !!CONFIG.MONGODB_URI);
+console.log('MONGODB_URI definida:', !!MONGODB_URI);
 console.log('TOKEN definido:', !!CONFIG.TOKEN);
 
-if (!CONFIG.MONGODB_URI) {
-  console.error('❌ MONGODB_URI não está definida nas variáveis de ambiente!');
+if (!MONGODB_URI) {
+  console.error('❌ MongoDB não configurado! Defina MONGODB_URI ou MONGO_USER+MONGO_PASS+MONGO_HOST');
   process.exit(1);
 }
 
@@ -29,7 +34,7 @@ if (!CONFIG.MONGODB_URI) {
 let db = null;
 
 async function connectDB() {
-  const client = new MongoClient(CONFIG.MONGODB_URI);
+  const client = new MongoClient(MONGODB_URI);
   await client.connect();
   db = client.db('loopreels');
   console.log('✅ MongoDB conectado!');
