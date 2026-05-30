@@ -241,7 +241,13 @@ function startScheduler() {
     try {
       const posts = await getPosts();
       const now = new Date();
-      const nowStr = now.toISOString().slice(0, 16);
+
+      // Converter para horário de Brasília (UTC-3)
+      const brasiliaOffset = -3 * 60; // minutos
+      const brasiliaTime = new Date(now.getTime() + brasiliaOffset * 60000);
+      const nowStr = brasiliaTime.toISOString().slice(0, 16);
+
+      console.log(`⏰ Verificando às ${nowStr} BRT`);
 
       for (let post of posts) {
         if (post.status === 'agendado' && post.scheduledTime <= nowStr) {
