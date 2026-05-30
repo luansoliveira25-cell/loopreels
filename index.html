@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Loop Reels</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg1:#0f0f10;--bg2:#18181b;--bg3:#222228;--bg4:#2c2c35;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --accent:#7c5cfc;--accent2:#a78bfa;
+  --green:#22c55e;--red:#ef4444;--amber:#f59e0b;
+  --text1:#f0ede8;--text2:#a09e9a;--text3:#6b6966;
+}
+body{background:var(--bg1);color:var(--text1);font-family:'DM Sans',sans-serif;display:flex;height:100vh;overflow:hidden}
+.sidebar{width:220px;min-width:220px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column}
+.logo{padding:20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.logo-icon{width:34px;height:34px;background:var(--accent);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:17px}
+.logo-text{font-size:15px;font-weight:700;letter-spacing:-.3px}
+.logo-sub{font-size:10px;color:var(--text3);letter-spacing:1px;text-transform:uppercase}
+.nav{padding:10px 8px;flex:1;overflow-y:auto}
+.nav-section{font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:var(--text3);padding:10px 10px 5px;margin-top:4px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;cursor:pointer;font-size:13.5px;color:var(--text2);transition:.15s;margin-bottom:2px;user-select:none}
+.nav-item:hover{background:var(--bg3);color:var(--text1)}
+.nav-item.active{background:rgba(124,92,252,.15);color:var(--accent2)}
+.nav-icon{font-size:17px;width:20px;text-align:center}
+.nav-badge{margin-left:auto;font-size:10px;padding:2px 7px;border-radius:10px;font-weight:600;background:var(--accent);color:#fff}
+.nav-badge.green{background:rgba(34,197,94,.2);color:var(--green)}
+.sidebar-footer{padding:14px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.user-avatar{width:32px;height:32px;background:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0}
+.user-name{font-size:13px;font-weight:500}
+.user-plan{font-size:11px;color:var(--text3)}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.topbar-title{font-size:16px;font-weight:600}
+.topbar-sub{font-size:12px;color:var(--text3);margin-top:1px}
+.topbar-actions{display:flex;gap:8px}
+.content{flex:1;overflow-y:auto;padding:22px 24px}
+.btn{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;border:none;display:inline-flex;align-items:center;gap:6px;transition:.15s;font-family:inherit}
+.btn-ghost{background:var(--bg3);color:var(--text2);border:1px solid var(--border2)}
+.btn-ghost:hover{background:var(--bg4);color:var(--text1)}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:#6d4ef0}
+.btn-danger{background:rgba(239,68,68,.15);color:var(--red);border:1px solid rgba(239,68,68,.2)}
+.btn-sm{padding:6px 12px;font-size:12px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:14px}
+.card-title{font-size:13px;font-weight:600;display:flex;align-items:center;gap:7px;margin-bottom:14px}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px}
+.stat-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.stat-value{font-size:24px;font-weight:700;letter-spacing:-.5px;line-height:1}
+.stat-meta{font-size:11px;color:var(--text3);margin-top:5px}
+.account-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.account-chip{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;border:1.5px solid var(--border);cursor:pointer;transition:.15s;background:var(--bg3)}
+.account-chip:hover{border-color:var(--border2)}
+.account-chip.selected{border-color:var(--accent);background:rgba(124,92,252,.08)}
+.account-chip.offline{opacity:.45;cursor:not-allowed}
+.account-avatar-sm{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;background:rgba(124,92,252,.2);color:var(--accent2)}
+.account-chip-name{font-size:11px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.account-chip-sub{font-size:10px;color:var(--text3)}
+.account-chip-check{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--border2);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:9px;transition:.15s;margin-left:auto}
+.account-chip.selected .account-chip-check{background:var(--accent);border-color:var(--accent);color:#fff}
+.pill{font-size:10px;padding:3px 8px;border-radius:20px;font-weight:600}
+.pill-green{background:rgba(34,197,94,.15);color:var(--green)}
+.pill-amber{background:rgba(245,158,11,.15);color:var(--amber)}
+.pill-red{background:rgba(239,68,68,.15);color:var(--red)}
+.pill-purple{background:rgba(124,92,252,.15);color:var(--accent2)}
+.form-label{font-size:12px;color:var(--text2);margin-bottom:5px;display:block}
+.form-input{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:9px 12px;color:var(--text1);font-size:13px;font-family:inherit;outline:none;transition:.15s}
+.form-input:focus{border-color:var(--accent)}
+.form-textarea{resize:none;height:80px;line-height:1.5}
+.form-group{margin-bottom:14px}
+.type-tabs{display:flex;gap:8px;margin-bottom:14px}
+.type-tab{flex:1;padding:12px;border-radius:10px;border:1.5px solid var(--border2);background:var(--bg3);cursor:pointer;text-align:center;transition:.15s}
+.type-tab.active{border-color:var(--accent);background:rgba(124,92,252,.1)}
+.type-tab-icon{font-size:22px;margin-bottom:4px}
+.type-tab-name{font-size:13px;font-weight:600}
+.type-tab-desc{font-size:11px;color:var(--text3);margin-top:2px}
+
+/* UPLOAD */
+.upload-zone{border:2px dashed var(--border2);border-radius:10px;padding:32px;text-align:center;cursor:pointer;transition:.2s;position:relative}
+.upload-zone:hover{border-color:var(--accent);background:rgba(124,92,252,.04)}
+.upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.upload-zone-icon{font-size:32px;margin-bottom:10px}
+.upload-zone-title{font-size:14px;color:var(--text1);font-weight:500}
+.upload-zone-sub{font-size:12px;color:var(--text3);margin-top:5px}
+
+/* PROGRESS */
+.progress-wrap{margin-top:12px;display:none}
+.progress-bar-outer{width:100%;height:8px;background:var(--bg4);border-radius:4px;overflow:hidden}
+.progress-bar-inner{height:100%;background:var(--accent);border-radius:4px;transition:width .3s}
+.progress-text{font-size:12px;color:var(--text3);margin-top:5px;text-align:center}
+
+/* VIDEO PREVIEW */
+.video-preview{margin-top:12px;display:none;border-radius:10px;overflow:hidden;border:1px solid var(--border2)}
+.video-preview video{width:100%;max-height:200px;object-fit:cover;display:block}
+.video-preview-info{padding:10px 12px;background:var(--bg3);display:flex;align-items:center;justify-content:space-between}
+.video-preview-name{font-size:12px;color:var(--text1);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px}
+.video-preview-size{font-size:11px;color:var(--text3)}
+
+/* THUMBNAIL */
+.thumbnail-section{display:none}
+.thumb-options{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
+.thumb-opt{aspect-ratio:9/16;border-radius:8px;border:2px solid var(--border);cursor:pointer;overflow:hidden;position:relative;transition:.15s;background:var(--bg3);display:flex;align-items:center;justify-content:center}
+.thumb-opt:hover{border-color:var(--border2)}
+.thumb-opt.active{border-color:var(--accent)}
+.thumb-opt img{width:100%;height:100%;object-fit:cover}
+.thumb-opt-label{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.6);font-size:9px;color:#fff;padding:3px;text-align:center}
+.thumb-upload-btn{border:2px dashed var(--border2);flex-direction:column;gap:4px;font-size:11px;color:var(--text3)}
+.thumb-upload-btn:hover{border-color:var(--accent);color:var(--accent2)}
+
+/* MULTIPLE VIDEOS */
+.videos-list{margin-top:10px}
+.video-item{display:flex;align-items:center;gap:10px;padding:10px;background:var(--bg3);border-radius:8px;margin-bottom:6px;border:1px solid var(--border)}
+.video-item-thumb{width:36px;height:36px;border-radius:6px;background:rgba(124,92,252,.2);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.video-item-info{flex:1;min-width:0}
+.video-item-name{font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.video-item-size{font-size:11px;color:var(--text3)}
+.video-item-status{font-size:10px;padding:2px 7px;border-radius:10px}
+.status-uploading{background:rgba(245,158,11,.15);color:var(--amber)}
+.status-done{background:rgba(34,197,94,.15);color:var(--green)}
+.status-error{background:rgba(239,68,68,.15);color:var(--red)}
+
+.time-slot{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.tz-badge{background:rgba(124,92,252,.15);color:var(--accent2);font-size:10px;padding:3px 7px;border-radius:6px;font-weight:600;white-space:nowrap}
+.queue-item{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--border)}
+.queue-item:last-child{border-bottom:none}
+.queue-thumb{width:42px;height:42px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;background:rgba(124,92,252,.15);overflow:hidden}
+.queue-thumb img{width:100%;height:100%;object-fit:cover}
+.queue-info{flex:1;min-width:0}
+.queue-title{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.queue-meta{font-size:11px;color:var(--text3);margin-top:2px}
+.queue-time{text-align:right;flex-shrink:0}
+.queue-time-main{font-size:13px;font-weight:600}
+.queue-time-sub{font-size:11px;color:var(--text3)}
+.loop-banner{background:linear-gradient(135deg,rgba(124,92,252,.12),rgba(167,139,250,.06));border:1px solid rgba(124,92,252,.25);border-radius:12px;padding:16px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
+.loop-icon{width:40px;height:40px;background:rgba(124,92,252,.2);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.progress-bar{width:100%;height:6px;background:var(--bg4);border-radius:3px;overflow:hidden}
+.progress-fill{height:100%;background:var(--accent);border-radius:3px;transition:width .3s}
+.switch{position:relative;width:38px;height:22px;cursor:pointer;flex-shrink:0}
+.switch input{opacity:0;width:0;height:0}
+.switch-track{position:absolute;inset:0;background:var(--bg4);border-radius:11px;transition:.2s}
+.switch input:checked+.switch-track{background:var(--accent)}
+.switch-thumb{position:absolute;width:16px;height:16px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s;pointer-events:none}
+.switch input:checked~.switch-thumb{left:19px}
+.summary-box{background:rgba(124,92,252,.08);border:1px solid rgba(124,92,252,.2);border-radius:10px;padding:14px}
+.summary-row{display:flex;justify-content:space-between;padding:4px 0;font-size:13px}
+.summary-label{color:var(--text3)}
+.summary-value{font-weight:500}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid-3{display:grid;grid-template-columns:2fr 1fr;gap:14px}
+.criar-layout{display:grid;grid-template-columns:1fr 320px;gap:14px}
+.loading{text-align:center;padding:32px;color:var(--text3);font-size:13px}
+.spinner{display:inline-block;width:20px;height:20px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin-bottom:8px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty{text-align:center;padding:40px;color:var(--text3)}
+.empty-icon{font-size:36px;margin-bottom:10px}
+.empty-title{font-size:14px;color:var(--text2);font-weight:500}
+.empty-sub{font-size:12px;margin-top:4px}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:12px 18px;font-size:13px;display:flex;align-items:center;gap:10px;z-index:1000;transform:translateY(100px);opacity:0;transition:.3s;box-shadow:0 8px 32px rgba(0,0,0,.4)}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.success{border-color:rgba(34,197,94,.3);color:var(--green)}
+.toast.error{border-color:rgba(239,68,68,.3);color:var(--red)}
+select.form-input{appearance:none}
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="logo">
+    <div class="logo-icon">🔁</div>
+    <div>
+      <div class="logo-text">Loop Reels</div>
+      <div class="logo-sub">Painel de gestão</div>
+    </div>
+  </div>
+  <nav class="nav">
+    <div class="nav-item active" onclick="navigate('dashboard')"><i class="ti ti-layout-dashboard nav-icon"></i>Visão Geral</div>
+    <div class="nav-item" onclick="navigate('criar')"><i class="ti ti-circle-plus nav-icon"></i>Criar Post</div>
+    <div class="nav-item" onclick="navigate('fila')"><i class="ti ti-list nav-icon"></i>Fila de Posts<span class="nav-badge" id="nav-badge-fila">0</span></div>
+    <div class="nav-item" onclick="navigate('contas')"><i class="ti ti-brand-instagram nav-icon"></i>Contas</div>
+    <div class="nav-section">Automação</div>
+    <div class="nav-item" onclick="navigate('loop')"><i class="ti ti-refresh nav-icon"></i>Loop Automático<span class="nav-badge green" id="nav-loop-badge">OFF</span></div>
+    <div class="nav-item" onclick="navigate('config')"><i class="ti ti-settings nav-icon"></i>Configurações</div>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-avatar">L</div>
+    <div><div class="user-name">Loop Reels</div><div class="user-plan" id="sidebar-accounts-count">carregando...</div></div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <div><div class="topbar-title" id="topbar-title">Visão Geral</div><div class="topbar-sub" id="topbar-sub">Carregando...</div></div>
+    <div class="topbar-actions" id="topbar-actions">
+      <button class="btn btn-primary" onclick="navigate('criar')"><i class="ti ti-circle-plus"></i>Novo Post</button>
+    </div>
+  </div>
+  <div class="content" id="content"><div class="loading"><div class="spinner"></div><br>Carregando...</div></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = 'http://localhost:3000';
+let allAccounts = [], allPosts = [], stats = {}, loopData = {};
+let selectedAccounts = new Set();
+let uploadedVideos = []; // [{name, url, thumbnailUrl, size}]
+let selectedThumbnailUrl = null;
+let currentType = 'reel';
+let timeSlots = ['09:00','13:00','19:00'];
+
+function showToast(msg, type='success') {
+  const t = document.getElementById('toast');
+  t.textContent = (type==='success'?'✅ ':'❌ ') + msg;
+  t.className = `toast ${type} show`;
+  setTimeout(() => t.className='toast', 3500);
+}
+
+async function api(method, path, body=null) {
+  const opts = {method, headers:{'Content-Type':'application/json'}};
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(API+path, opts);
+  return res.json();
+}
+
+function formatSize(bytes) {
+  if (bytes < 1024*1024) return (bytes/1024).toFixed(1)+'KB';
+  return (bytes/(1024*1024)).toFixed(1)+'MB';
+}
+
+function todayStr() {
+  return new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'});
+}
+
+function navigate(page) {
+  document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
+  const navMap = {dashboard:0,criar:1,fila:2,contas:3,loop:4,config:5};
+  document.querySelectorAll('.nav-item')[navMap[page]]?.classList.add('active');
+  const titles = {
+    dashboard:['Visão Geral', todayStr()],
+    criar:['Criar Post','Selecione tipo, mídias, contas e horário'],
+    fila:['Fila de Posts','Todos os posts agendados e publicados'],
+    contas:['Contas','Gerencie as contas conectadas'],
+    loop:['Loop Automático','Esteira de conteúdo evergreen'],
+    config:['Configurações','Ajustes do sistema']
+  };
+  document.getElementById('topbar-title').textContent = titles[page][0];
+  document.getElementById('topbar-sub').textContent = titles[page][1];
+  document.getElementById('content').innerHTML = '<div class="loading"><div class="spinner"></div><br>Carregando...</div>';
+  loadData().then(() => {
+    const pages = {dashboard:renderDashboard,criar:renderCriar,fila:renderFila,contas:renderContas,loop:renderLoop,config:renderConfig};
+    pages[page]?.();
+  });
+}
+
+async function loadData() {
+  try {
+    const [a,p,s,l] = await Promise.all([api('GET','/api/accounts'),api('GET','/api/posts'),api('GET','/api/stats'),api('GET','/api/loop')]);
+    allAccounts = a.accounts||[];
+    allPosts = p.posts||[];
+    stats = s.stats||{};
+    loopData = l.loop||{};
+    const active = allAccounts.filter(x=>x.instagram).length;
+    document.getElementById('sidebar-accounts-count').textContent = `${active} conta${active!==1?'s':''} conectada${active!==1?'s':''}`;
+    document.getElementById('nav-badge-fila').textContent = stats.totalScheduled||0;
+    document.getElementById('nav-loop-badge').textContent = loopData.active?'ON':'OFF';
+    document.getElementById('nav-loop-badge').className = `nav-badge${loopData.active?' green':''}`;
+  } catch(e) { console.error(e); }
+}
+
+// ===== DASHBOARD =====
+function renderDashboard() {
+  const today = new Date().toISOString().slice(0,10);
+  const todayPosts = allPosts.filter(p=>p.scheduledTime?.startsWith(today));
+  const nextPosts = allPosts.filter(p=>p.status==='agendado').sort((a,b)=>a.scheduledTime?.localeCompare(b.scheduledTime)).slice(0,4);
+  const activeAccounts = allAccounts.filter(a=>a.instagram);
+
+  document.getElementById('topbar-actions').innerHTML = `<button class="btn btn-primary" onclick="navigate('criar')"><i class="ti ti-circle-plus"></i>Novo Post</button>`;
+  document.getElementById('content').innerHTML = `
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-label">Posts hoje</div><div class="stat-value">${todayPosts.length}</div><div class="stat-meta">✅ ${todayPosts.filter(p=>p.status==='publicado').length} publicados · ⏳ ${todayPosts.filter(p=>p.status==='agendado').length} pendentes</div></div>
+      <div class="stat-card"><div class="stat-label">Contas ativas</div><div class="stat-value">${activeAccounts.length}<span style="font-size:16px;color:var(--text3)">/${allAccounts.length}</span></div><div class="stat-meta">Via Metricool</div></div>
+      <div class="stat-card"><div class="stat-label">Na fila</div><div class="stat-value">${stats.totalScheduled||0}</div><div class="stat-meta">Posts agendados</div></div>
+      <div class="stat-card"><div class="stat-label">Loop automático</div><div class="stat-value" style="font-size:18px;color:${loopData.active?'var(--green)':'var(--text3)'}">${loopData.active?'ATIVO':'INATIVO'}</div><div class="stat-meta">${loopData.videos?.length||0} vídeos no ciclo</div></div>
+    </div>
+    ${loopData.active?`<div class="loop-banner"><div style="display:flex;align-items:center;gap:14px"><div class="loop-icon">🔁</div><div><div style="font-size:14px;font-weight:600;color:var(--accent2)">Loop Automático — Ativo</div><div style="font-size:12px;color:var(--text3);margin-top:2px">${loopData.videos?.length||0} vídeos · ciclo automático</div></div></div><div><div style="font-size:11px;color:var(--text3);margin-bottom:5px">Progresso</div><div style="display:flex;align-items:center;gap:8px"><div class="progress-bar" style="width:120px"><div class="progress-fill" style="width:${loopData.videos?.length?Math.round((loopData.currentIndex/loopData.videos.length)*100):0}%"></div></div><span style="font-size:12px;color:var(--text2)">${loopData.currentIndex||0}/${loopData.videos?.length||0}</span></div></div></div>`:''}
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-header"><div class="card-title"><i class="ti ti-clock"></i>Próximos posts</div><span class="btn btn-ghost btn-sm" onclick="navigate('fila')">ver todos</span></div>
+        ${nextPosts.length===0?'<div class="empty"><div class="empty-icon">📭</div><div class="empty-title">Nenhum post agendado</div><div class="empty-sub">Crie um novo post para começar</div></div>':nextPosts.map(p=>`
+          <div class="queue-item">
+            <div class="queue-thumb">${p.thumbnailUrl?`<img src="${p.thumbnailUrl}" onerror="this.parentElement.textContent='🎬'">`:'🎬'}</div>
+            <div class="queue-info"><div class="queue-title">${p.caption?.slice(0,40)||'Sem legenda'}...</div><div class="queue-meta">${allAccounts.find(a=>a.id==p.blogId)?.instagram?'@'+allAccounts.find(a=>a.id==p.blogId).instagram:'ID '+p.blogId} · ${p.type||'REEL'}</div></div>
+            <div class="queue-time"><div class="queue-time-main">${p.scheduledTime?.slice(11,16)||'--:--'}</div><div class="queue-time-sub">${p.scheduledTime?.slice(0,10)||'-'}</div></div>
+          </div>`).join('')}
+      </div>
+      <div class="card">
+        <div class="card-title"><i class="ti ti-brand-instagram"></i>Contas</div>
+        ${activeAccounts.slice(0,6).map(a=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)"><div class="account-avatar-sm">${a.instagram?.slice(0,2).toUpperCase()}</div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">@${a.instagram}</div></div><span class="pill pill-green">ativo</span></div>`).join('')}
+        ${activeAccounts.length>6?`<div style="text-align:center;font-size:12px;color:var(--text3);margin-top:8px">+${activeAccounts.length-6} mais</div>`:''}
+      </div>
+    </div>`;
+}
+
+// ===== CRIAR POST =====
+function renderCriar() {
+  uploadedVideos = [];
+  selectedThumbnailUrl = null;
+  selectedAccounts = new Set();
+
+  document.getElementById('topbar-actions').innerHTML = `
+    <button class="btn btn-ghost" onclick="saveDraft()">Salvar rascunho</button>
+    <button class="btn btn-primary" id="btn-agendar" onclick="agendarPost()"><i class="ti ti-calendar-check"></i>Agendar posts</button>`;
+
+  document.getElementById('content').innerHTML = `
+    <div class="criar-layout">
+      <div>
+        <div class="card">
+          <div class="card-title"><i class="ti ti-layout-grid"></i>Tipo de publicação</div>
+          <div class="type-tabs">
+            <div class="type-tab" id="tab-post" onclick="setType('post')"><div class="type-tab-icon">🖼️</div><div class="type-tab-name">Post</div><div class="type-tab-desc">Imagem ou carrossel</div></div>
+            <div class="type-tab active" id="tab-reel" onclick="setType('reel')"><div class="type-tab-icon">🎬</div><div class="type-tab-name">Reel</div><div class="type-tab-desc">Vídeo vertical</div></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title" id="media-card-title"><i class="ti ti-video"></i>Upload de vídeos <span style="color:var(--text3);font-weight:400;font-size:12px">— até 10 arquivos</span></div>
+          <div class="upload-zone" id="upload-zone">
+            <input type="file" id="file-input" accept="video/*" multiple onchange="handleFileSelect(this.files)">
+            <div class="upload-zone-icon" id="upload-icon">🎬</div>
+            <div class="upload-zone-title" id="upload-title">Clique ou arraste os vídeos aqui</div>
+            <div class="upload-zone-sub" id="upload-sub">MP4, MOV · máx 500MB por arquivo</div>
+          </div>
+          <div class="progress-wrap" id="progress-wrap">
+            <div class="progress-bar-outer"><div class="progress-bar-inner" id="progress-bar" style="width:0%"></div></div>
+            <div class="progress-text" id="progress-text">Enviando...</div>
+          </div>
+          <div class="videos-list" id="videos-list"></div>
+        </div>
+
+        <div class="card thumbnail-section" id="thumb-section">
+          <div class="card-title"><i class="ti ti-photo"></i>Miniatura do Reel <span style="color:var(--text3);font-weight:400;font-size:12px">— capa que aparece no feed</span></div>
+          <div style="font-size:12px;color:var(--text3);margin-bottom:10px">Escolha um frame automático ou faça upload de uma imagem personalizada</div>
+          <div class="thumb-options" id="thumb-options">
+            <div class="thumb-opt thumb-upload-btn" onclick="document.getElementById('thumb-file-input').click()">
+              <input type="file" id="thumb-file-input" accept="image/*" style="display:none" onchange="handleThumbnailUpload(this.files[0])">
+              <i class="ti ti-upload" style="font-size:20px"></i>
+              <div>Upload personalizado</div>
+            </div>
+          </div>
+          <div id="thumb-selected" style="margin-top:10px;font-size:12px;color:var(--text3);display:none">
+            ✅ Miniatura selecionada
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><i class="ti ti-pencil"></i>Legenda</div>
+          <textarea class="form-input form-textarea" id="legenda" placeholder="Escreva a legenda... use # para hashtags" oninput="updateCharCount()"></textarea>
+          <div style="display:flex;justify-content:space-between;margin-top:5px">
+            <span style="font-size:11px;color:var(--text3)" id="char-count">0 / 2200</span>
+            <span style="font-size:11px;color:var(--text3)" id="hash-count">0 hashtags</span>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><i class="ti ti-brand-instagram"></i>Contas</div>
+            <span style="font-size:12px;color:var(--accent2);cursor:pointer" onclick="toggleAllAccounts()" id="toggle-all">Selecionar todas</span>
+          </div>
+          <div style="font-size:12px;color:var(--text3);margin-bottom:8px" id="accounts-selected-label">0 selecionadas</div>
+          <div class="account-grid" id="accounts-grid-criar">
+            ${allAccounts.filter(a=>a.instagram).map(a=>`
+              <div class="account-chip" onclick="toggleAccount('${a.id}')" id="chip-${a.id}">
+                <div class="account-avatar-sm">${a.instagram?.slice(0,2).toUpperCase()}</div>
+                <div style="flex:1;min-width:0"><div class="account-chip-name">@${a.instagram}</div><div class="account-chip-sub">ID: ${a.id}</div></div>
+                <div class="account-chip-check" id="check-${a.id}"></div>
+              </div>`).join('')}
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><i class="ti ti-clock"></i>Horários</div>
+          <div style="margin-bottom:10px"><span class="tz-badge"><i class="ti ti-map-pin" style="font-size:10px"></i> Brasília (BRT · UTC-3)</span></div>
+          <div id="time-slots-container"></div>
+          <button class="btn btn-ghost btn-sm" onclick="addTimeSlot()" style="width:100%;justify-content:center;margin-top:4px"><i class="ti ti-plus"></i>Adicionar horário</button>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><i class="ti ti-list-check"></i>Resumo</div>
+          <div class="summary-box">
+            <div class="summary-row"><span class="summary-label">Tipo</span><span class="summary-value" id="sum-type">Reel</span></div>
+            <div class="summary-row"><span class="summary-label">Vídeos</span><span class="summary-value" id="sum-media" style="color:var(--accent2)">0</span></div>
+            <div class="summary-row"><span class="summary-label">Contas</span><span class="summary-value" id="sum-accounts" style="color:var(--accent2)">0</span></div>
+            <div class="summary-row"><span class="summary-label">Horários</span><span class="summary-value" id="sum-times">0</span></div>
+            <div style="border-top:1px solid var(--border);margin:8px 0"></div>
+            <div class="summary-row"><span class="summary-label" style="font-weight:600;color:var(--text1)">Total de posts</span><span style="font-size:18px;font-weight:700;color:var(--accent2)" id="sum-total">0</span></div>
+          </div>
+          <button class="btn btn-primary" onclick="agendarPost()" style="width:100%;justify-content:center;margin-top:10px;padding:12px;font-size:14px;font-weight:600">
+            <i class="ti ti-calendar-check"></i>Agendar <span id="btn-total">0</span> posts
+          </button>
+        </div>
+      </div>
+    </div>`;
+
+  renderTimeSlots();
+  updateSummary();
+}
+
+async function handleFileSelect(files) {
+  if (!files || files.length === 0) return;
+  const fileArray = Array.from(files).slice(0, 10 - uploadedVideos.length);
+
+  for (const file of fileArray) {
+    const id = Date.now() + Math.random();
+    uploadedVideos.push({ id, name: file.name, size: file.size, url: null, thumbnailUrl: null, status: 'uploading' });
+    renderVideosList();
+    updateSummary();
+
+    try {
+      const formData = new FormData();
+      formData.append('video', file);
+
+      document.getElementById('progress-wrap').style.display = 'block';
+      document.getElementById('progress-text').textContent = `Enviando ${file.name}...`;
+
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', `${API}/api/upload/video`);
+
+      xhr.timeout = 300000;
+      xhr.ontimeout = () => { reject(new Error('Timeout')); };
+
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) {
+          const pct = Math.round((e.loaded / e.total) * 100);
+          document.getElementById('progress-bar').style.width = pct + '%';
+          document.getElementById('progress-text').textContent = `Enviando ${file.name}... ${pct}%`;
+        }
+      };
+
+      const result = await new Promise((resolve, reject) => {
+        xhr.onload = () => {
+          try { resolve(JSON.parse(xhr.responseText)); }
+          catch { reject(new Error('Resposta inválida')); }
+        };
+        xhr.onerror = () => reject(new Error('Erro de conexão'));
+        xhr.send(formData);
+      });
+
+      if (result.success) {
+        const video = uploadedVideos.find(v => v.id === id);
+        if (video) {
+          video.url = result.url;
+          video.thumbnailUrl = result.thumbnail;
+          video.status = 'done';
+        }
+
+        // Adicionar thumbnail automática
+        if (result.thumbnail && currentType === 'reel') {
+          addThumbOption(result.thumbnail, 'Auto');
+        }
+
+        showToast(`${file.name} enviado com sucesso!`);
+      } else {
+        const video = uploadedVideos.find(v => v.id === id);
+        if (video) video.status = 'error';
+        showToast(`Erro ao enviar ${file.name}`, 'error');
+      }
+    } catch(e) {
+      const video = uploadedVideos.find(v => v.id === id);
+      if (video) video.status = 'error';
+      showToast(`Erro: ${e.message}`, 'error');
+    }
+
+    renderVideosList();
+    updateSummary();
+  }
+
+  document.getElementById('progress-bar').style.width = '100%';
+  document.getElementById('progress-text').textContent = 'Upload concluído!';
+  setTimeout(() => { if(document.getElementById('progress-wrap')) document.getElementById('progress-wrap').style.display = 'none'; }, 2000);
+}
+
+function renderVideosList() {
+  const list = document.getElementById('videos-list');
+  if (!list) return;
+  list.innerHTML = uploadedVideos.map(v => `
+    <div class="video-item">
+      <div class="video-item-thumb">🎬</div>
+      <div class="video-item-info">
+        <div class="video-item-name">${v.name}</div>
+        <div class="video-item-size">${formatSize(v.size)}</div>
+      </div>
+      <span class="video-item-status ${v.status==='uploading'?'status-uploading':v.status==='done'?'status-done':'status-error'}">
+        ${v.status==='uploading'?'⏳ Enviando':v.status==='done'?'✅ Pronto':'❌ Erro'}
+      </span>
+      <button class="btn btn-danger btn-sm" onclick="removeVideo(${uploadedVideos.indexOf(v)})" style="margin-left:8px"><i class="ti ti-x"></i></button>
+    </div>`).join('');
+}
+
+function removeVideo(idx) {
+  uploadedVideos.splice(idx, 1);
+  renderVideosList();
+  updateSummary();
+}
+
+function addThumbOption(url, label) {
+  const container = document.getElementById('thumb-options');
+  if (!container) return;
+  const div = document.createElement('div');
+  div.className = 'thumb-opt';
+  div.innerHTML = `<img src="${url}" onerror="this.src=''"><div class="thumb-opt-label">${label}</div>`;
+  div.onclick = () => selectThumb(url, div);
+  container.insertBefore(div, container.firstChild);
+  document.getElementById('thumb-section').style.display = 'block';
+  if (!selectedThumbnailUrl) selectThumb(url, div);
+}
+
+function selectThumb(url, el) {
+  document.querySelectorAll('.thumb-opt').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  selectedThumbnailUrl = url;
+  const sel = document.getElementById('thumb-selected');
+  if (sel) { sel.style.display = 'block'; sel.textContent = '✅ Miniatura selecionada'; }
+}
+
+async function handleThumbnailUpload(file) {
+  if (!file) return;
+  showToast('Enviando miniatura...');
+  try {
+    const formData = new FormData();
+    formData.append('thumbnail', file);
+    const res = await fetch(`${API}/api/upload/thumbnail`, { method: 'POST', body: formData });
+    const result = await res.json();
+    if (result.success) {
+      addThumbOption(result.url, 'Custom');
+      showToast('Miniatura enviada!');
+    } else {
+      showToast('Erro ao enviar miniatura', 'error');
+    }
+  } catch(e) {
+    showToast('Erro: ' + e.message, 'error');
+  }
+}
+
+function setType(type) {
+  currentType = type;
+  document.getElementById('tab-post').classList.toggle('active', type==='post');
+  document.getElementById('tab-reel').classList.toggle('active', type==='reel');
+  document.getElementById('sum-type').textContent = type==='reel'?'Reel':'Post/Carrossel';
+  document.getElementById('media-card-title').innerHTML = type==='reel'
+    ? '<i class="ti ti-video"></i>Upload de vídeos <span style="color:var(--text3);font-weight:400;font-size:12px">— até 10 arquivos</span>'
+    : '<i class="ti ti-photo"></i>Upload de imagens <span style="color:var(--text3);font-weight:400;font-size:12px">— até 10 arquivos</span>';
+  document.getElementById('file-input').accept = type==='reel'?'video/*':'image/*';
+  document.getElementById('upload-icon').textContent = type==='reel'?'🎬':'🖼️';
+  document.getElementById('upload-title').textContent = type==='reel'?'Clique ou arraste os vídeos aqui':'Clique ou arraste as imagens aqui';
+  document.getElementById('upload-sub').textContent = type==='reel'?'MP4, MOV · máx 500MB por arquivo':'JPG, PNG · carrossel de até 10 imagens';
+  document.getElementById('thumb-section').style.display = type==='reel'?'block':'none';
+  uploadedVideos = [];
+  renderVideosList();
+  updateSummary();
+}
+
+function toggleAccount(id) {
+  if (selectedAccounts.has(id)) { selectedAccounts.delete(id); document.getElementById('chip-'+id)?.classList.remove('selected'); }
+  else { selectedAccounts.add(id); document.getElementById('chip-'+id)?.classList.add('selected'); }
+  updateSummary();
+}
+
+function toggleAllAccounts() {
+  const ids = allAccounts.filter(a=>a.instagram).map(a=>String(a.id));
+  const allSel = ids.every(id=>selectedAccounts.has(id));
+  ids.forEach(id => {
+    if (allSel) { selectedAccounts.delete(id); document.getElementById('chip-'+id)?.classList.remove('selected'); }
+    else { selectedAccounts.add(id); document.getElementById('chip-'+id)?.classList.add('selected'); }
+  });
+  document.getElementById('toggle-all').textContent = allSel?'Selecionar todas':'Desmarcar todas';
+  updateSummary();
+}
+
+function renderTimeSlots() {
+  const c = document.getElementById('time-slots-container');
+  if (!c) return;
+  c.innerHTML = timeSlots.map((t,i) => `
+    <div class="time-slot">
+      <input type="time" class="form-input" value="${t}" onchange="timeSlots[${i}]=this.value;updateSummary()" style="flex:1">
+      <span class="tz-badge">BRT</span>
+      <button class="btn btn-danger btn-sm" onclick="removeTimeSlot(${i})"><i class="ti ti-x"></i></button>
+    </div>`).join('');
+  updateSummary();
+}
+
+function addTimeSlot() { timeSlots.push('12:00'); renderTimeSlots(); }
+function removeTimeSlot(i) { if(timeSlots.length>1){timeSlots.splice(i,1);renderTimeSlots();} }
+
+function updateCharCount() {
+  const val = document.getElementById('legenda')?.value||'';
+  if(document.getElementById('char-count')) document.getElementById('char-count').textContent = `${val.length} / 2200`;
+  if(document.getElementById('hash-count')) document.getElementById('hash-count').textContent = `${(val.match(/#\w+/g)||[]).length} hashtags`;
+}
+
+function updateSummary() {
+  const readyVideos = uploadedVideos.filter(v=>v.status==='done').length;
+  const nAccounts = selectedAccounts.size;
+  const nTimes = timeSlots.length;
+  const total = readyVideos * nAccounts;
+  const label = currentType==='reel'?'vídeo(s)':'imagem(s)';
+  const el = id => document.getElementById(id);
+  if(el('sum-media')) el('sum-media').textContent = `${readyVideos} ${label}`;
+  if(el('sum-accounts')) el('sum-accounts').textContent = `${nAccounts} conta(s)`;
+  if(el('sum-times')) el('sum-times').textContent = `${nTimes} horário(s)`;
+  if(el('sum-total')) el('sum-total').textContent = total;
+  if(el('btn-total')) el('btn-total').textContent = total;
+  if(el('accounts-selected-label')) el('accounts-selected-label').textContent = `${nAccounts} de ${allAccounts.filter(a=>a.instagram).length} selecionadas`;
+}
+
+async function agendarPost() {
+  const readyVideos = uploadedVideos.filter(v=>v.status==='done');
+  const caption = document.getElementById('legenda')?.value||'';
+  const blogIds = [...selectedAccounts];
+  const today = new Date().toISOString().slice(0,10);
+  if(readyVideos.length===0) return showToast('Aguarde o upload dos vídeos!','error');
+  if(blogIds.length===0) return showToast('Selecione pelo menos 1 conta!','error');
+
+  let total = 0;
+  for(const video of readyVideos) {
+    for(const time of timeSlots) {
+      const scheduledTime = `${today}T${time}:00`;
+      const res = await api('POST','/api/posts',{
+        mediaUrl: video.url,
+        thumbnailUrl: selectedThumbnailUrl, // só usa se usuário fez upload personalizado
+        caption,
+        scheduledTime,
+        blogIds,
+        type: currentType.toUpperCase()
+      });
+      if(res.success) total += blogIds.length;
+    }
+  }
+  showToast(`${total} post(s) agendado(s) com sucesso!`);
+  setTimeout(()=>navigate('fila'),1500);
+}
+
+function saveDraft() { showToast('Rascunho salvo!'); }
+
+// ===== FILA =====
+function renderFila() {
+  document.getElementById('topbar-actions').innerHTML = `<button class="btn btn-primary" onclick="navigate('criar')"><i class="ti ti-circle-plus"></i>Novo Post</button>`;
+  const sorted = [...allPosts].sort((a,b)=>(b.scheduledTime||'').localeCompare(a.scheduledTime||''));
+  document.getElementById('content').innerHTML = `
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><i class="ti ti-list"></i>Todos os posts (${allPosts.length})</div>
+        <div style="display:flex;gap:6px">
+          <span class="pill pill-amber">⏳ ${stats.totalScheduled||0} agendados</span>
+          <span class="pill pill-green">✅ ${stats.totalPublished||0} publicados</span>
+          <span class="pill pill-red">❌ ${stats.totalError||0} erros</span>
+        </div>
+      </div>
+      ${sorted.length===0?'<div class="empty"><div class="empty-icon">📭</div><div class="empty-title">Nenhum post ainda</div><div class="empty-sub">Crie seu primeiro post!</div></div>':sorted.map(p=>`
+        <div class="queue-item">
+          <div class="queue-thumb">${p.thumbnailUrl?`<img src="${p.thumbnailUrl}" onerror="this.parentElement.textContent='🎬'">`:(p.type==='REEL'?'🎬':'🖼️')}</div>
+          <div class="queue-info">
+            <div class="queue-title">${p.caption?.slice(0,50)||'Sem legenda'}${(p.caption?.length||0)>50?'...':''}</div>
+            <div class="queue-meta">${allAccounts.find(a=>a.id==p.blogId)?.instagram?'@'+allAccounts.find(a=>a.id==p.blogId).instagram:'ID '+p.blogId} · ${p.type||'REEL'}</div>
+          </div>
+          <span class="pill ${p.status==='publicado'?'pill-green':p.status==='erro'?'pill-red':'pill-amber'}" style="margin-right:10px">
+            ${p.status==='publicado'?'✅ publicado':p.status==='erro'?'❌ erro':'⏳ agendado'}
+          </span>
+          <div class="queue-time"><div class="queue-time-main">${p.scheduledTime?.slice(11,16)||'--:--'}</div><div class="queue-time-sub">${p.scheduledTime?.slice(0,10)||'-'}</div></div>
+          <button class="btn btn-danger btn-sm" onclick="deletePost(${p.id})" style="margin-left:8px"><i class="ti ti-trash"></i></button>
+        </div>`).join('')}
+    </div>`;
+}
+
+async function deletePost(id) {
+  if(!confirm('Excluir este post?')) return;
+  const res = await api('DELETE',`/api/posts/${id}`);
+  if(res.success){showToast('Post excluído!');navigate('fila');}
+  else showToast('Erro ao excluir!','error');
+}
+
+// ===== CONTAS =====
+function renderContas() {
+  document.getElementById('topbar-actions').innerHTML = `<button class="btn btn-ghost" onclick="loadData().then(()=>renderContas())"><i class="ti ti-refresh"></i>Sincronizar</button>`;
+  document.getElementById('content').innerHTML = `
+    <div class="card">
+      <div class="card-header"><div class="card-title"><i class="ti ti-brand-instagram"></i>Contas conectadas via Metricool</div><span class="pill pill-purple">${allAccounts.length} total</span></div>
+      ${allAccounts.map(a=>`
+        <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)">
+          <div class="account-avatar-sm" style="width:38px;height:38px;font-size:13px">${a.instagram?.slice(0,2).toUpperCase()||'??'}</div>
+          <div style="flex:1"><div style="font-size:13px;font-weight:500">${a.instagram?'@'+a.instagram:'Instagram não conectado'}</div><div style="font-size:11px;color:var(--text3)">ID: ${a.id} · ${a.timezone||'UTC'}</div></div>
+          <span class="pill ${a.instagram?'pill-green':'pill-amber'}">${a.instagram?'ativo':'sem instagram'}</span>
+        </div>`).join('')}
+      <div style="margin-top:14px;padding:12px;background:rgba(124,92,252,.08);border-radius:8px;font-size:12px;color:var(--text3)">
+        💡 Para adicionar novas contas, conecte-as no Metricool e clique em <strong style="color:var(--accent2)">Sincronizar</strong>.
+      </div>
+    </div>`;
+}
+
+// ===== LOOP =====
+function renderLoop() {
+  document.getElementById('topbar-actions').innerHTML = '';
+  const progress = loopData.videos?.length?Math.round((loopData.currentIndex/loopData.videos.length)*100):0;
+  document.getElementById('content').innerHTML = `
+    <div class="card">
+      <div class="card-header"><div class="card-title"><i class="ti ti-refresh"></i>Loop Automático</div>
+        <label class="switch"><input type="checkbox" ${loopData.active?'checked':''} onchange="toggleLoop(this.checked)"><div class="switch-track"></div><div class="switch-thumb"></div></label>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px">
+        <div style="background:var(--bg3);border-radius:10px;padding:14px"><div style="font-size:11px;color:var(--text3);margin-bottom:4px">Vídeos no ciclo</div><div style="font-size:22px;font-weight:700">${loopData.videos?.length||0}</div></div>
+        <div style="background:var(--bg3);border-radius:10px;padding:14px"><div style="font-size:11px;color:var(--text3);margin-bottom:4px">Posição atual</div><div style="font-size:22px;font-weight:700;color:var(--accent2)">${loopData.currentIndex||0}/${loopData.videos?.length||0}</div></div>
+        <div style="background:var(--bg3);border-radius:10px;padding:14px"><div style="font-size:11px;color:var(--text3);margin-bottom:4px">Contas no loop</div><div style="font-size:22px;font-weight:700">${loopData.accountIds?.length||0}</div></div>
+      </div>
+      <div><div style="font-size:12px;color:var(--text3);margin-bottom:6px">Progresso do ciclo</div><div class="progress-bar"><div class="progress-fill" style="width:${progress}%"></div></div><div style="display:flex;justify-content:space-between;margin-top:4px;font-size:11px;color:var(--text3)"><span>Início</span><span>${progress}% completo</span><span>Fim</span></div></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="ti ti-clock"></i>Horários do loop</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">${(loopData.timesPerDay||[]).map(t=>`<span class="tz-badge">${t} BRT</span>`).join('')}</div>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="ti ti-video"></i>Adicionar vídeo ao loop</div>
+      <div class="upload-zone" id="loop-upload-zone" style="margin-bottom:12px">
+        <input type="file" accept="video/*" onchange="handleLoopVideoUpload(this.files[0])">
+        <div class="upload-zone-icon">🎬</div>
+        <div class="upload-zone-title">Clique para adicionar vídeo ao loop</div>
+        <div class="upload-zone-sub">MP4, MOV · máx 500MB</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Legenda do vídeo</label>
+        <textarea class="form-input form-textarea" id="loop-video-caption" placeholder="Legenda para este vídeo..."></textarea>
+      </div>
+    </div>
+    ${loopData.videos?.length>0?`
+    <div class="card">
+      <div class="card-title"><i class="ti ti-list"></i>Vídeos no ciclo (${loopData.videos.length})</div>
+      ${loopData.videos.map((v,i)=>`
+        <div class="queue-item">
+          <div style="font-size:12px;color:var(--text3);width:24px;text-align:center">${i+1}</div>
+          <div class="queue-thumb">${v.thumbnailUrl?`<img src="${v.thumbnailUrl}" onerror="this.parentElement.textContent='🎬'">`:'🎬'}</div>
+          <div class="queue-info"><div class="queue-title">${v.url?.slice(0,50)}...</div><div class="queue-meta">${v.caption?.slice(0,40)||'Sem legenda'}</div></div>
+          ${i===loopData.currentIndex?'<span class="pill pill-purple">atual</span>':''}
+          <button class="btn btn-danger btn-sm" onclick="removeLoopVideo(${i})" style="margin-left:8px"><i class="ti ti-trash"></i></button>
+        </div>`).join('')}
+    </div>`:''}`;
+}
+
+async function handleLoopVideoUpload(file) {
+  if (!file) return;
+  showToast('Enviando vídeo para o loop...');
+  try {
+    const formData = new FormData();
+    formData.append('video', file);
+    const res = await fetch(`${API}/api/upload/video`, {method:'POST',body:formData});
+    const result = await res.json();
+    if (result.success) {
+      const caption = document.getElementById('loop-video-caption')?.value||'';
+      const videos = [...(loopData.videos||[]), {url:result.url, thumbnailUrl:result.thumbnail, caption}];
+      await api('PUT','/api/loop',{videos});
+      showToast('Vídeo adicionado ao loop!');
+      await loadData();
+      renderLoop();
+    } else {
+      showToast('Erro ao enviar vídeo','error');
+    }
+  } catch(e) { showToast('Erro: '+e.message,'error'); }
+}
+
+async function toggleLoop(active) {
+  await api('PUT','/api/loop',{active});
+  showToast(active?'Loop ativado!':'Loop desativado!');
+  await loadData();
+  renderLoop();
+}
+
+async function removeLoopVideo(i) {
+  const videos = [...(loopData.videos||[])];
+  videos.splice(i,1);
+  await api('PUT','/api/loop',{videos});
+  showToast('Vídeo removido!');
+  await loadData();
+  renderLoop();
+}
+
+// ===== CONFIG =====
+function renderConfig() {
+  document.getElementById('topbar-actions').innerHTML = '';
+  document.getElementById('content').innerHTML = `
+    <div class="card">
+      <div class="card-title"><i class="ti ti-settings"></i>Configurações do sistema</div>
+      <div class="form-group">
+        <label class="form-label">Delay entre contas no loop (minutos)</label>
+        <input type="number" class="form-input" value="5" min="1" max="60" style="width:120px" id="cfg-delay">
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">Intervalo entre posts automáticos para proteger as contas</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Fuso horário</label>
+        <select class="form-input" style="width:250px" id="cfg-tz">
+          <option value="America/Sao_Paulo">Brasília (BRT · UTC-3)</option>
+          <option value="America/Manaus">Manaus (AMT · UTC-4)</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" onclick="saveConfig()"><i class="ti ti-device-floppy"></i>Salvar configurações</button>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="ti ti-info-circle"></i>Informações do sistema</div>
+      <div style="font-size:13px;color:var(--text2);line-height:2.2">
+        <div>🔁 <strong>Loop Reels</strong> v1.0</div>
+        <div>🔗 Backend: <span style="color:var(--green)">http://localhost:3000</span></div>
+        <div>📡 API: <span style="color:var(--green)">Metricool conectado</span></div>
+        <div>☁️ Storage: <span style="color:var(--green)">Cloudinary ativo</span></div>
+        <div>⏰ Agendador: <span style="color:var(--green)">Ativo (verifica a cada minuto)</span></div>
+        <div>🕐 Fuso: <span style="color:var(--accent2)">Brasília (UTC-3)</span></div>
+      </div>
+    </div>`;
+}
+
+async function saveConfig() {
+  const delay = parseInt(document.getElementById('cfg-delay')?.value||5);
+  const timezone = document.getElementById('cfg-tz')?.value||'America/Sao_Paulo';
+  await api('PUT','/api/settings',{delayBetweenAccounts:delay,timezone});
+  showToast('Configurações salvas!');
+}
+
+navigate('dashboard');
+</script>
+</body>
+</html>
